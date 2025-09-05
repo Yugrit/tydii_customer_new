@@ -4,23 +4,22 @@ import React from 'react'
 import { Platform } from 'react-native'
 
 import { HapticTab } from '@/components/HapticTab'
+import Header from '@/components/Header'
 import { IconSymbol } from '@/components/ui/IconSymbol'
 import TabBarBackground from '@/components/ui/TabBarBackground'
-import { Colors } from '@/constants/Colors'
 import { useColorScheme } from '@/hooks/useColorScheme'
 import '../globals.css'
 
 export default function TabLayout () {
-  const colorScheme = useColorScheme()
+  const { colorScheme } = useColorScheme()
 
   // ✅ No auth check needed - handled by root layout
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
+        header: () => <Header />,
         tabBarStyle: Platform.select({
           ios: {
             position: 'absolute'

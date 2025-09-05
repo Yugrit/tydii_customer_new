@@ -1,5 +1,4 @@
 // components/ui/Loader.tsx
-import { Colors } from '@/constants/Colors'
 import { useColorScheme } from '@/hooks/useColorScheme'
 import React from 'react'
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
@@ -19,9 +18,9 @@ export default function Loader ({
   color,
   backgroundColor = '#F9FDFF'
 }: LoaderProps) {
-  const colorScheme = useColorScheme()
+  const { colorScheme } = useColorScheme()
 
-  const loaderColor = color || Colors[colorScheme ?? 'light'].tint
+  const loaderColor = color
 
   return (
     <View style={[styles.container, { backgroundColor }]}>

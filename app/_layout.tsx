@@ -29,7 +29,8 @@ interface JWTPayload {
 SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout () {
-  const colorScheme = useColorScheme()
+  const { colorScheme } = useColorScheme()
+  // clearStorage_MMKV()
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf')
   })

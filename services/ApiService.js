@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { isEmpty } from 'lodash'
-import { HEADERS, METHODS, STRINGS, URLs } from '../constants/Strings'
+import { HEADERS, METHODS, URLs } from '../constants/Strings'
 import { getData_MMKV } from './StorageService'
 
 const apiInstance = axios.create({
@@ -9,7 +9,7 @@ const apiInstance = axios.create({
 
 apiInstance.interceptors.request.use(config => {
   try {
-    const accessToken = getData_MMKV(STRINGS.ACCESS_TOKEN)
+    const accessToken = getData_MMKV('user-token')
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`
     }
@@ -85,7 +85,8 @@ const ApiService = {
         method: METHODS.DELETE,
         url: opts.url,
         data: opts.data,
-        headers: this.getHeaders(opts)
+        headers: this.getHeaders(opts),
+        params: opts.params
       })
       return this.getResponse(response)
     } catch (err) {

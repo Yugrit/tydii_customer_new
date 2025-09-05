@@ -1,0 +1,8 @@
+/* global.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.div{
+background-color: aqua;
+}

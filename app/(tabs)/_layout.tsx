@@ -1,49 +1,40 @@
-// app/(tabs)/_layout.tsx - SIMPLIFIED WITHOUT AUTH CHECK
-import { Tabs } from 'expo-router'
-import React from 'react'
-import { Platform } from 'react-native'
-
-import { HapticTab } from '@/components/HapticTab'
+// app/(tabs)/_layout.tsx
 import Header from '@/components/Header'
-import { IconSymbol } from '@/components/ui/IconSymbol'
-import TabBarBackground from '@/components/ui/TabBarBackground'
-import { useColorScheme } from '@/hooks/useColorScheme'
-import '../globals.css'
+import { Tabs } from 'expo-router'
+import { Home, Settings, User } from 'lucide-react-native'
+import React from 'react'
 
-export default function TabLayout () {
-  const { colorScheme } = useColorScheme()
-
-  // ✅ No auth check needed - handled by root layout
+export default function TabsLayout () {
   return (
     <Tabs
-      screenOptions={{
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
+      screenOptions={({ route }) => ({
+        tabBarActiveTintColor: '#007AFF',
+        tabBarInactiveTintColor: 'gray',
+        tabBarShowLabel: true,
+        tabBarLabelPosition: 'below-icon',
         header: () => <Header />,
-        tabBarStyle: Platform.select({
-          ios: {
-            position: 'absolute'
-          },
-          default: {}
-        })
-      }}
+        headerShown: true, // Use your custom header
+        tabBarIcon: ({ color, size }) => {
+          switch (route.name) {
+            case 'index':
+              return <Home color={color} size={size || 24} />
+            case '(home)': // If you're using (home) folder
+              return <Home color={color} size={size || 24} />
+            case 'profile':
+              return <User color={color} size={size || 24} />
+            case 'settings':
+              return <Settings color={color} size={size || 24} />
+            default:
+              return <Home color={color} size={size || 24} />
+          }
+        }
+      })}
     >
       <Tabs.Screen
-        name='index'
+        name='(home)'
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name='house.fill' color={color} />
-          )
-        }}
-      />
-      <Tabs.Screen
-        name='explore'
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name='paperplane.fill' color={color} />
-          )
+          tabBarLabel: 'Home',
+          title: 'Home'
         }}
       />
     </Tabs>

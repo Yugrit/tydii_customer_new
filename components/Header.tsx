@@ -10,7 +10,8 @@ import {
 } from 'react-native'
 // Import Lucide icons
 import { getData_MMKV } from '@/services/StorageService'
-import { Bell, Menu, User } from 'lucide-react-native'
+import { LinearGradient } from 'expo-linear-gradient'
+import { Bell, User } from 'lucide-react-native'
 
 interface CustomHeaderProps {
   onMenuPress?: () => void
@@ -24,14 +25,6 @@ export default function CustomHeader ({
   onProfilePress
 }: CustomHeaderProps) {
   const [user, setUser] = useState<any>(null)
-
-  const handleMenuPress = () => {
-    if (onMenuPress) {
-      onMenuPress()
-    } else {
-      console.log('Menu pressed')
-    }
-  }
 
   const handleNotificationPress = () => {
     if (onNotificationPress) {
@@ -60,40 +53,21 @@ export default function CustomHeader ({
   return (
     <>
       <StatusBar barStyle='light-content' backgroundColor='#1e5f74' />
-      <View style={styles.header}>
+      <LinearGradient colors={['#035480', '#3E8EB8']} style={styles.header}>
         {/* Background Bubble Effects */}
         <View style={styles.backgroundBubbles}>
           {/* Large bubble */}
-          <View style={[styles.bubble, styles.bubble1]}>
-            <View style={styles.bubbleHighlight1} />
-            <View style={styles.bubbleInner1} />
-          </View>
-
-          {/* Medium bubble */}
-          <View style={[styles.bubble, styles.bubble2]}></View>
-
-          {/* Small bubble */}
-          <View style={[styles.bubble, styles.bubble3]}>
-            <View style={styles.bubbleHighlight3} />
-          </View>
-
-          {/* Extra small bubble */}
-          <View style={[styles.bubble, styles.bubble4]} />
-
-          {/* Tiny bubbles */}
-          <View style={[styles.bubble, styles.bubble5]} />
-          <View style={[styles.bubble, styles.bubble6]} />
+          <LinearGradient
+            colors={['#3E8EB8', '#174973']}
+            start={{ x: 0, y: 0.5 }} // Start from left center
+            end={{ x: 1, y: 0.5 }} // End at right center
+            style={[styles.bubble, styles.bubble1]}
+          />
         </View>
 
         {/* Header Content */}
         <View style={styles.headerContent}>
           <View style={styles.leftSection}>
-            <TouchableOpacity
-              style={styles.menuButton}
-              onPress={handleMenuPress}
-            >
-              <Menu size={24} color='white' strokeWidth={2} />
-            </TouchableOpacity>
             <View style={styles.welcomeText}>
               <Text style={styles.welcomeBack}>Welcome Back</Text>
               <Text style={styles.userName}>{user?.name || 'User Name'}</Text>
@@ -128,7 +102,7 @@ export default function CustomHeader ({
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </LinearGradient>
     </>
   )
 }
@@ -155,20 +129,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.15)'
   },
   bubble1: {
-    width: 120,
-    height: 120,
-    top: -40,
-    right: -30,
+    width: 210,
+    height: 210,
+    top: -50,
+    right: -70,
     backgroundColor: 'rgba(255, 255, 255, 0.12)'
   },
   bubbleHighlight1: {
     position: 'absolute',
-    width: 25,
-    height: 25,
+    width: 50,
+    height: 50,
     borderRadius: 12.5,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    backgroundColor: '#035480',
     top: 15,
-    left: 20
+    left: 50
   },
   bubbleInner1: {
     position: 'absolute',

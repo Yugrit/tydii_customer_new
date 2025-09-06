@@ -5,7 +5,7 @@ import {
   ThemeProvider
 } from '@react-navigation/native'
 import { useFonts } from 'expo-font'
-import { Stack, useRouter } from 'expo-router'
+import { Href, Stack, useRouter } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
 import { jwtDecode } from 'jwt-decode'
@@ -194,7 +194,7 @@ export default function RootLayout () {
 
         if (authState === 'authenticated') {
           console.log('🔄 Navigating to tabs...')
-          router.replace('/(tabs)')
+          router.replace('/(tabs)' as Href)
         } else {
           console.log('🔄 Navigating to auth...')
           router.replace('/auth/login')
@@ -222,7 +222,7 @@ export default function RootLayout () {
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name='auth' options={{ headerShown: false }} />
-          <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
+          <Stack.Screen name='(tabs)/(home)' options={{ headerShown: false }} />
           <Stack.Screen name='+not-found' />
         </Stack>
         <StatusBar style='auto' />

@@ -15,10 +15,10 @@ import {
 } from 'react-native'
 
 const { width } = Dimensions.get('window')
-const CARD_WIDTH = (width - 48) / 2 // Two cards with margins
-const CARD_MARGIN = 8
+const CARD_WIDTH = (width - 48) / 1.5 // Two cards with margins
+const CARD_MARGIN = 4
 
-interface LaundryStore {
+interface OfferedStore {
   id: string
   title: string
   image: any
@@ -52,7 +52,7 @@ export default function OfferedLaundry () {
   const flatListRef = useRef<FlatList>(null)
 
   // State management
-  const [laundryStores, setLaundryStores] = useState<LaundryStore[]>([])
+  const [OfferedStores, setOfferedStores] = useState<OfferedStore[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [userId, setUserId] = useState<number | null>(null)
@@ -157,7 +157,7 @@ export default function OfferedLaundry () {
 
       if (response && response.data && Array.isArray(response.data)) {
         // Transform API data to match your interface
-        const transformedStores: LaundryStore[] = response.data.map(
+        const transformedStores: OfferedStore[] = response.data.map(
           (store: any) => {
             // Calculate average rating from feedbacks if not provided
             let avgRating = store.average_rating || 0
@@ -190,11 +190,11 @@ export default function OfferedLaundry () {
         )
 
         console.log('Transformed stores:', transformedStores)
-        setLaundryStores(transformedStores)
+        setOfferedStores(transformedStores)
       } else {
         // No data or empty response
         console.log('No stores found in response')
-        setLaundryStores([])
+        setOfferedStores([])
       }
     } catch (err: any) {
       console.error('Error fetching favourite stores:', err)
@@ -216,19 +216,19 @@ export default function OfferedLaundry () {
         setError(err.message || 'Failed to load favourite stores')
       }
 
-      setLaundryStores([])
+      setOfferedStores([])
     } finally {
       setLoading(false)
     }
   }
 
-  const handleStorePress = (item: LaundryStore) => {
+  const handleStorePress = (item: OfferedStore) => {
     console.log('Store pressed:', item.title, 'ID:', item.id)
     // Handle navigation to store details
     // router.push(`/store/${item.id}`)
   }
 
-  const handleFavoritePress = async (item: LaundryStore) => {
+  const handleFavoritePress = async (item: OfferedStore) => {
     try {
       console.log(
         'Toggling favorite for:',
@@ -267,7 +267,7 @@ export default function OfferedLaundry () {
 
       if (response) {
         // Update local state to toggle favorite status
-        setLaundryStores(prev =>
+        setOfferedStores(prev =>
           prev.map(store =>
             store.id === item.id
               ? { ...store, isFavorite: !store.isFavorite }
@@ -290,7 +290,7 @@ export default function OfferedLaundry () {
     }
   }
 
-  const renderCard = ({ item }: { item: LaundryStore }) => {
+  const renderCard = ({ item }: { item: OfferedStore }) => {
     return (
       <View style={{ marginHorizontal: CARD_MARGIN }}>
         <StoreCard
@@ -304,7 +304,7 @@ export default function OfferedLaundry () {
   }
 
   // Empty state
-  if (error || laundryStores.length === 0) {
+  if (error || OfferedStores.length === 0) {
     return <></>
   }
 
@@ -324,7 +324,7 @@ export default function OfferedLaundry () {
       >
         <Animated.FlatList
           ref={flatListRef}
-          data={laundryStores}
+          data={OfferedStores}
           keyExtractor={item => item.id}
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -342,12 +342,12 @@ export default function OfferedLaundry () {
       </View>
 
       {/* Pagination Dots */}
-      {laundryStores.length > 2 && (
+      {OfferedStores.length > 2 && (
         <View style={styles.pagination}>
           {/* Pagination Dots */}
-          {laundryStores.length > 2 && (
+          {OfferedStores.length > 2 && (
             <View style={styles.pagination}>
-              {Array.from({ length: Math.ceil(laundryStores.length / 2) }).map(
+              {Array.from({ length: Math.ceil(OfferedStores.length / 2) }).map(
                 (_, i) => {
                   const inputRange = [
                     (i - 1) * (CARD_WIDTH + CARD_MARGIN * 2) * 2,

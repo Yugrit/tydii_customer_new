@@ -1,5 +1,4 @@
 // components/ServiceCard.tsx
-// components/ServiceCard.tsx
 import { useThemeColors } from '@/hooks/useThemeColor'
 import { LinearGradient } from 'expo-linear-gradient'
 import { ArrowRight } from 'lucide-react-native'
@@ -49,68 +48,116 @@ export default function ServiceCard ({
   }
 
   return (
-    <View style={styles.card}>
-      <View style={styles.content}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
-
-        {button && (
-          <TouchableOpacity
-            style={styles.button}
-            onPress={onPress}
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            activeOpacity={1}
+    <View style={styles.cardWrapper}>
+      <View style={styles.card}>
+        <View style={styles.content}>
+          <Text
+            style={styles.title}
+            numberOfLines={2}
+            adjustsFontSizeToFit={true}
+            minimumFontScale={0.8}
+            textBreakStrategy='simple'
+            allowFontScaling={false}
+            ellipsizeMode='tail'
           >
-            <Text style={styles.buttonText}>{buttonText}</Text>
-            <Animated.View
-              style={{
-                transform: [{ translateX: translateAnim }]
-              }}
+            {title} {/* Add space to prevent cutoff */}
+          </Text>
+
+          <Text
+            style={styles.description}
+            numberOfLines={3}
+            adjustsFontSizeToFit={true}
+            minimumFontScale={0.9}
+            textBreakStrategy='simple'
+            allowFontScaling={false}
+            ellipsizeMode='tail'
+          >
+            {description} {/* Add space to prevent cutoff */}
+          </Text>
+
+          {button && (
+            <TouchableOpacity
+              style={styles.button}
+              onPress={onPress}
+              onPressIn={handlePressIn}
+              onPressOut={handlePressOut}
+              activeOpacity={1}
             >
-              <LinearGradient
-                colors={['#0FAEEF', '#1876A9']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.iconContainer}
+              <Text
+                style={styles.buttonText}
+                numberOfLines={1}
+                adjustsFontSizeToFit={true}
+                minimumFontScale={0.8}
+                textBreakStrategy='simple'
+                allowFontScaling={false}
+                ellipsizeMode='tail'
               >
-                <ArrowRight size={16} color='white' strokeWidth={2} />
-              </LinearGradient>
-            </Animated.View>
-          </TouchableOpacity>
-        )}
+                {buttonText} {/* Add space to prevent cutoff */}
+              </Text>
+              <Animated.View
+                style={{
+                  transform: [{ translateX: translateAnim }]
+                }}
+              >
+                <LinearGradient
+                  colors={['#0FAEEF', '#1876A9']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.iconContainer}
+                >
+                  <ArrowRight size={16} color='white' strokeWidth={2} />
+                </LinearGradient>
+              </Animated.View>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </View>
   )
 }
 
-// ... your existing createStyles function
-
 const createStyles = (colors: any) =>
   StyleSheet.create({
+    cardWrapper: {
+      flex: 1,
+      marginHorizontal: 5
+    },
     card: {
       backgroundColor: colors.light,
       borderRadius: 15,
       padding: 20,
-      margin: 10
+      marginHorizontal: 5,
+      flex: 1,
+      minHeight: 140
     },
     content: {
-      alignItems: 'center'
+      alignItems: 'center',
+      flex: 1,
+      justifyContent: 'space-between'
     },
     title: {
-      fontSize: 30,
+      fontSize: 28,
       fontWeight: '800',
       color: colors.primary,
       marginBottom: 10,
-      textAlign: 'center'
+      textAlign: 'center',
+      paddingHorizontal: 10,
+      paddingRight: 6, // Extra right padding to prevent cutoff
+      lineHeight: 34,
+      includeFontPadding: false,
+      flexShrink: 1 // Allow text to shrink properly
     },
     description: {
       fontSize: 14,
       color: colors.textSecondary,
       textAlign: 'center',
-      lineHeight: 24,
+      lineHeight: 20,
       marginBottom: 16,
-      paddingHorizontal: 8
+      paddingHorizontal: 15,
+      paddingRight: 8, // Extra right padding to prevent cutoff
+      includeFontPadding: false,
+      flex: 1,
+      flexShrink: 1 // Allow text to shrink properly
     },
     button: {
       backgroundColor: colors.background,
@@ -118,16 +165,29 @@ const createStyles = (colors: any) =>
       alignItems: 'center',
       justifyContent: 'center',
       paddingVertical: 12,
-      paddingHorizontal: 24,
+      paddingHorizontal: 22, // Increase horizontal padding
       borderRadius: 30,
-      minWidth: 180,
+      minWidth: 160,
       borderColor: '#AEE0F5',
-      borderWidth: 1
+      borderWidth: 1,
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 1
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 2
     },
     buttonText: {
       color: colors.textSecondary,
-      fontSize: 16,
-      marginRight: 8
+      fontSize: 15,
+      fontWeight: '600',
+      marginRight: 12, // Increase margin
+      textAlign: 'center',
+      includeFontPadding: false,
+      paddingRight: 4, // Extra right padding to prevent cutoff
+      flexShrink: 1 // Allow text to shrink properly
     },
     iconContainer: {
       backgroundColor: colors.primary,
@@ -135,6 +195,7 @@ const createStyles = (colors: any) =>
       width: 24,
       height: 24,
       justifyContent: 'center',
-      alignItems: 'center'
+      alignItems: 'center',
+      flexShrink: 0 // Prevent icon from shrinking
     }
   })

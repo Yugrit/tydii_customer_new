@@ -5,24 +5,11 @@ import React, { useMemo } from 'react'
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import ScrollingTags from './ScrollingText'
 
-interface LaundryStore {
-  id: string
-  title: string
-  image: any
-  rating: number
-  time: string
-  description: string
-  tags: string[]
-  isNew: boolean
-  isFavorite: boolean
-  preferred: boolean
-}
-
 interface StoreCardProps {
-  item: LaundryStore
+  item: any
   cardWidth: number
-  onPress?: (item: LaundryStore) => void
-  onFavoritePress?: (item: LaundryStore) => void
+  onPress?: (item: any) => void
+  onFavoritePress?: (item: any) => void
 }
 
 export default function StoreCard ({

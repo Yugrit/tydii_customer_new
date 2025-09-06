@@ -1,4 +1,6 @@
 // app/(tabs)/index.tsx
+import { userLoginState } from '@/Redux/slices/userSlices'
+import FavouriteLaundry from '@/components/FavouriteLaundary'
 import OfferedLaundry from '@/components/OfferedLaundary'
 import Services from '@/components/Services'
 import Loader from '@/components/ui/Loader'
@@ -14,8 +16,6 @@ import { jwtDecode } from 'jwt-decode'
 import React, { useEffect, useState } from 'react'
 import { Alert, ScrollView, StyleSheet } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
-import { userLoginState } from '../../Redux/slices/userSlices'
-import FavouriteLaundry from '../../components/FavouriteLaundary'
 
 // ✅ Interface for JWT
 interface JWTPayload {

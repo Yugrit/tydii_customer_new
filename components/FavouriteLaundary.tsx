@@ -15,8 +15,8 @@ import {
 } from 'react-native'
 
 const { width } = Dimensions.get('window')
-const CARD_WIDTH = (width - 48) / 2 // Two cards with margins
-const CARD_MARGIN = 8
+const CARD_WIDTH = (width - 48) / 1.5 // Two cards with margins
+const CARD_MARGIN = 4
 
 interface LaundryStore {
   id: string
@@ -28,6 +28,7 @@ interface LaundryStore {
   tags: string[]
   isNew: boolean
   isFavorite: boolean
+  preferred?: boolean
 }
 
 interface JWTPayload {
@@ -183,7 +184,8 @@ export default function FavouriteLaundry () {
                 ? new Date().getTime() - new Date(store.createdAt).getTime() <
                   30 * 24 * 60 * 60 * 1000
                 : false, // New if created within 30 days
-              isFavorite: true // Since these are favourite stores
+              isFavorite: true, // Since these are favourite stores
+              preferred: store.preferred || false
             }
           }
         )

@@ -1,33 +1,52 @@
 // components/ServicesSection.tsx
 import { useThemeColors } from '@/hooks/useThemeColor'
-import React, { useMemo } from 'react'
+import { startOrder } from '@/Redux/slices/orderSlice'
+import { usePathname, useRouter } from 'expo-router'
+import React, { useEffect, useMemo } from 'react'
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { useDispatch } from 'react-redux'
 
 export default function ServicesSection () {
   const colors = useThemeColors()
   const styles = useMemo(() => createStyles(colors), [colors])
+  const router = useRouter()
+  const dispatch = useDispatch()
+
+  const pathname = usePathname()
+
+  useEffect(() => {
+    console.log('Current pathname:', pathname)
+  }, [pathname])
 
   const services = [
     {
       id: 'wash-fold',
       title: 'Wash & Fold',
+      serviceType: 'Wash & Fold',
       image: require('../assets/images/wash.png')
     },
     {
       id: 'dry-clean',
       title: 'Dry Clean',
+      serviceType: 'Dry Cleaning',
       image: require('../assets/images/dryclean.png')
     },
     {
       id: 'tailoring',
       title: 'Tailoring',
+      serviceType: 'Tailoring',
       image: require('../assets/images/tailor.png')
     }
   ]
 
-  const handleServicePress = (serviceId: string) => {
-    console.log(`Service pressed: ${serviceId}`)
-    // Handle service selection here
+  const handleServicePress = (service: any) => {
+    console.log(`Service pressed: ${service.id}`)
+
+    // Dispatch to Redux to start order flow
+    dispatch(startOrder(service.serviceType))
+
+    // Navigate to order flow while staying in the same tab
+    router.push('/order/pickup-details')
   }
 
   return (
@@ -38,25 +57,22 @@ export default function ServicesSection () {
 
       <View style={styles.servicesContainer}>
         {services.map(service => (
-          <>
-            <View>
-              <TouchableOpacity
-                key={service.id}
-                style={styles.serviceItem}
-                onPress={() => handleServicePress(service.id)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.iconContainer]}>
-                  <Image
-                    source={service.image}
-                    style={styles.iconImage}
-                    resizeMode='contain'
-                  />
-                </View>
-              </TouchableOpacity>
-              <Text style={styles.serviceTitle}>{service.title}</Text>
-            </View>
-          </>
+          <View key={service.id}>
+            <TouchableOpacity
+              style={styles.serviceItem}
+              onPress={() => handleServicePress(service)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.iconContainer]}>
+                <Image
+                  source={service.image}
+                  style={styles.iconImage}
+                  resizeMode='contain'
+                />
+              </View>
+            </TouchableOpacity>
+            <Text style={styles.serviceTitle}>{service.title}</Text>
+          </View>
         ))}
       </View>
     </View>
@@ -98,7 +114,7 @@ const createStyles = (colors: any) =>
       width: 100,
       padding: 15,
       height: 100,
-      borderRadius: '50%',
+      borderRadius: 50,
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: 5,

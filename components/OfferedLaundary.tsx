@@ -28,6 +28,7 @@ interface LaundryStore {
   tags: string[]
   isNew: boolean
   isFavorite: boolean
+  preferred: boolean
 }
 
 interface JWTPayload {
@@ -49,7 +50,6 @@ export default function OfferedLaundry () {
   const styles = useMemo(() => createStyles(colors), [colors])
   const scrollX = useRef(new Animated.Value(0)).current
   const flatListRef = useRef<FlatList>(null)
-  const currentIndex = useRef(0)
 
   // State management
   const [laundryStores, setLaundryStores] = useState<LaundryStore[]>([])
@@ -183,7 +183,8 @@ export default function OfferedLaundry () {
                 ? new Date().getTime() - new Date(store.createdAt).getTime() <
                   30 * 24 * 60 * 60 * 1000
                 : false, // New if created within 30 days
-              isFavorite: true // Since these are favourite stores
+              isFavorite: store.isFavourite,
+              preferred: store.preferred
             }
           }
         )
@@ -221,26 +222,6 @@ export default function OfferedLaundry () {
     }
   }
 
-  // Auto scroll functionality
-  useEffect(() => {
-    if (laundryStores.length === 0) return
-
-    const timer = setInterval(() => {
-      if (currentIndex.current < laundryStores.length - 2) {
-        currentIndex.current += 2
-      } else {
-        currentIndex.current = 0
-      }
-
-      flatListRef.current?.scrollToIndex({
-        index: currentIndex.current,
-        animated: true
-      })
-    }, 4000)
-
-    return () => clearInterval(timer)
-  }, [laundryStores.length])
-
   const handleStorePress = (item: LaundryStore) => {
     console.log('Store pressed:', item.title, 'ID:', item.id)
     // Handle navigation to store details
@@ -249,28 +230,54 @@ export default function OfferedLaundry () {
 
   const handleFavoritePress = async (item: LaundryStore) => {
     try {
-      console.log('Removing from favorites:', item.title)
+      console.log(
+        'Toggling favorite for:',
+        item.title,
+        'Current status:',
+        item.isFavorite
+      )
 
       if (!userId) {
         console.error('User ID not available')
         return
       }
 
-      // Use the correct endpoint with query parameter as per your curl
-      const response = await ApiService.delete({
-        url: `/customer/store/favorite/${userId}`,
-        params: {
-          storeId: item.id
-        }
-      })
+      let response
+
+      if (item.isFavorite) {
+        // Remove from favorites - DELETE request
+        response = await ApiService.delete({
+          url: `/customer/store/favorite/${userId}`,
+          params: {
+            storeId: item.id
+          }
+        })
+        console.log('Removed from favorites')
+      } else {
+        // Add to favorites - PATCH request
+        response = await ApiService.patch({
+          url: `/customer/store/favorite/${userId}`,
+          params: {
+            storeId: item.id
+          },
+          data: {} // Empty data body, storeId is in params
+        })
+        console.log('Added to favorites')
+      }
 
       if (response) {
-        // Remove from local state
-        setLaundryStores(prev => prev.filter(store => store.id !== item.id))
-        console.log('Store removed from favorites successfully')
+        // Update local state to toggle favorite status
+        setLaundryStores(prev =>
+          prev.map(store =>
+            store.id === item.id
+              ? { ...store, isFavorite: !store.isFavorite }
+              : store
+          )
+        )
+        console.log('Favorite status toggled successfully')
       }
     } catch (err) {
-      console.error('Error removing from favorites:', err)
+      console.error('Error toggling favorite:', err)
       // You could show a toast/alert here to inform user of the error
     }
   }
@@ -305,63 +312,78 @@ export default function OfferedLaundry () {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>
-          Favourite <Text style={styles.titleAccent}>Laundry</Text>
+          Offered <Text style={styles.titleAccent}>Laundry</Text>
         </Text>
         <View style={styles.underline} />
       </View>
 
-      <Animated.FlatList
-        ref={flatListRef}
-        data={laundryStores}
-        keyExtractor={item => item.id}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        snapToInterval={CARD_WIDTH + CARD_MARGIN * 2}
-        snapToAlignment='start'
-        decelerationRate='fast'
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false }
-        )}
-        scrollEventThrottle={16}
-        contentContainerStyle={styles.flatListContainer}
-        renderItem={renderCard}
-        onMomentumScrollEnd={event => {
-          const newIndex = Math.floor(
-            event.nativeEvent.contentOffset.x / (CARD_WIDTH + CARD_MARGIN * 2)
-          )
-          currentIndex.current = newIndex
+      <View
+        style={{
+          marginHorizontal: 15
         }}
-      />
+      >
+        <Animated.FlatList
+          ref={flatListRef}
+          data={laundryStores}
+          keyExtractor={item => item.id}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={CARD_WIDTH + CARD_MARGIN * 2}
+          snapToAlignment='start'
+          decelerationRate='fast'
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+            { useNativeDriver: false }
+          )}
+          scrollEventThrottle={16}
+          contentContainerStyle={styles.flatListContainer}
+          renderItem={renderCard}
+        />
+      </View>
 
       {/* Pagination Dots */}
       {laundryStores.length > 2 && (
         <View style={styles.pagination}>
-          {Array.from({ length: Math.ceil(laundryStores.length / 2) }).map(
-            (_, i) => {
-              const inputRange = [
-                (i - 1) * (CARD_WIDTH + CARD_MARGIN * 2) * 2,
-                i * (CARD_WIDTH + CARD_MARGIN * 2) * 2,
-                (i + 1) * (CARD_WIDTH + CARD_MARGIN * 2) * 2
-              ]
+          {/* Pagination Dots */}
+          {laundryStores.length > 2 && (
+            <View style={styles.pagination}>
+              {Array.from({ length: Math.ceil(laundryStores.length / 2) }).map(
+                (_, i) => {
+                  const inputRange = [
+                    (i - 1) * (CARD_WIDTH + CARD_MARGIN * 2) * 2,
+                    i * (CARD_WIDTH + CARD_MARGIN * 2) * 2,
+                    (i + 1) * (CARD_WIDTH + CARD_MARGIN * 2) * 2
+                  ]
 
-              const opacity = scrollX.interpolate({
-                inputRange,
-                outputRange: [0.3, 1, 0.3],
-                extrapolate: 'clamp'
-              })
+                  // Animate opacity
+                  const opacity = scrollX.interpolate({
+                    inputRange,
+                    outputRange: [0.3, 1, 0.3],
+                    extrapolate: 'clamp'
+                  })
 
-              return (
-                <Animated.View
-                  key={i}
-                  style={[
-                    styles.paginationDot,
-                    i === 1 ? styles.activeDot : styles.inactiveDot,
-                    { opacity }
-                  ]}
-                />
-              )
-            }
+                  // Animate scale for bigger active dot
+                  const scale = scrollX.interpolate({
+                    inputRange,
+                    outputRange: [1, 1.8, 1], // Makes active dot 1.8x bigger
+                    extrapolate: 'clamp'
+                  })
+
+                  return (
+                    <Animated.View
+                      key={`pagination-dot-${i}`}
+                      style={[
+                        styles.paginationDot,
+                        {
+                          opacity,
+                          transform: [{ scale }]
+                        }
+                      ]}
+                    />
+                  )
+                }
+              )}
+            </View>
           )}
         </View>
       )}
@@ -373,7 +395,11 @@ const createStyles = (colors: any) =>
   StyleSheet.create({
     container: {
       paddingVertical: 16,
-      backgroundColor: 'transparent'
+      backgroundColor: '#02537F',
+      marginHorizontal: 14,
+      overflow: 'hidden',
+      borderRadius: 20,
+      marginBottom: 30
     },
     centerContent: {
       justifyContent: 'center',
@@ -387,10 +413,11 @@ const createStyles = (colors: any) =>
     title: {
       fontSize: 24,
       fontWeight: '700',
-      color: colors.text
+      color: 'white',
+      letterSpacing: 2
     },
     titleAccent: {
-      color: '#008ECC'
+      color: 'white'
     },
     underline: {
       width: 120,
@@ -399,26 +426,27 @@ const createStyles = (colors: any) =>
       marginTop: 4
     },
     flatListContainer: {
-      paddingHorizontal: 8,
-      paddingVertical: 10
+      overflow: 'hidden'
     },
     pagination: {
       flexDirection: 'row',
       justifyContent: 'center',
       alignItems: 'center',
-      marginTop: 16
+      marginTop: 0,
+      paddingVertical: 8 // Add padding to prevent clipping
     },
     paginationDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      marginHorizontal: 4
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      marginHorizontal: 6, // Increased spacing for larger active dots
+      backgroundColor: '#D9D9D9'
     },
     activeDot: {
-      backgroundColor: '#1976D2'
+      backgroundColor: 'black'
     },
     inactiveDot: {
-      backgroundColor: '#E0E0E0'
+      backgroundColor: 'red'
     },
     loadingText: {
       marginTop: 12,

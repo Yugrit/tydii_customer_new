@@ -71,7 +71,8 @@ const ApiService = {
         method: METHODS.PATCH,
         url: opts.url,
         data: opts.data,
-        headers: this.getHeaders(opts)
+        headers: this.getHeaders(opts),
+        params: opts.params
       })
       return this.getResponse(response)
     } catch (err) {

@@ -1,8 +1,9 @@
 // components/StoreCard.tsx
 import { useThemeColors } from '@/hooks/useThemeColor'
-import { ArrowRight, Heart } from 'lucide-react-native'
+import { ArrowRight, BadgeCheck, Heart } from 'lucide-react-native'
 import React, { useMemo } from 'react'
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import ScrollingTags from './ScrollingText'
 
 interface LaundryStore {
   id: string
@@ -14,6 +15,7 @@ interface LaundryStore {
   tags: string[]
   isNew: boolean
   isFavorite: boolean
+  preferred: boolean
 }
 
 interface StoreCardProps {
@@ -84,15 +86,22 @@ export default function StoreCard ({
           onPress={handleFavoritePress}
         >
           <Heart
-            size={20}
+            size={14}
             color={item.isFavorite ? '#FF4757' : 'white'}
             fill={item.isFavorite ? '#FF4757' : 'transparent'}
           />
         </TouchableOpacity>
 
-        <View style={styles.verifiedBadge}>
-          <Text style={styles.verifiedText}>TYDII</Text>
-        </View>
+        {item.preferred && (
+          <View style={styles.verifiedBadge}>
+            <BadgeCheck
+              fill={'#1876A9'}
+              stroke={'white'}
+              size={15}
+            ></BadgeCheck>
+            <Text style={styles.verifiedText}>TYDII</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.cardContent}>
@@ -100,13 +109,7 @@ export default function StoreCard ({
 
         <View style={styles.ratingContainer}>{renderStars(item.rating)}</View>
 
-        <View style={styles.tagsContainer}>
-          {item.tags.map((tag, index) => (
-            <View key={index} style={styles.tag}>
-              <Text style={styles.tagText}>{tag}</Text>
-            </View>
-          ))}
-        </View>
+        <ScrollingTags tags={item.tags} colors={colors} />
 
         <TouchableOpacity style={styles.orderButton} onPress={handleOrderPress}>
           <Text style={styles.orderButtonText}>Order Now</Text>
@@ -171,8 +174,8 @@ const createStyles = (colors: any, cardWidth: number) =>
       position: 'absolute',
       top: 12,
       right: 12,
-      width: 32,
-      height: 32,
+      width: 25,
+      height: 25,
       borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.light,
@@ -184,14 +187,20 @@ const createStyles = (colors: any, cardWidth: number) =>
       position: 'absolute',
       bottom: 12,
       right: 12,
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      backgroundColor: '#FFFFFF',
+      opacity: 0.8,
       paddingHorizontal: 8,
       paddingVertical: 4,
-      borderRadius: 12
+      borderRadius: 4,
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3
     },
     verifiedText: {
-      color: 'white',
-      fontSize: 10,
+      color: 'black',
+      fontSize: 8,
+      letterSpacing: 1,
       fontWeight: '600'
     },
     cardContent: {
@@ -200,10 +209,12 @@ const createStyles = (colors: any, cardWidth: number) =>
     cardTitle: {
       fontSize: 16,
       fontWeight: '700',
+      textAlign: 'center',
       color: colors.primary,
       marginVertical: 6
     },
     ratingContainer: {
+      marginHorizontal: 'auto',
       flexDirection: 'row',
       marginBottom: 10
     },

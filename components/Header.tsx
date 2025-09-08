@@ -1,6 +1,7 @@
 // components/CustomHeader.tsx
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import {
+  Alert,
   Image,
   StatusBar,
   StyleSheet,
@@ -9,9 +10,13 @@ import {
   View
 } from 'react-native'
 // Import Lucide icons
-import { getData_MMKV } from '@/services/StorageService'
+import { userLoginState } from '@/Redux/slices/userSlices'
+import { RootState } from '@/Redux/Store'
+import { clearStorage_MMKV } from '@/services/StorageService'
 import { LinearGradient } from 'expo-linear-gradient'
+import { router } from 'expo-router'
 import { Bell, User } from 'lucide-react-native'
+import { useDispatch, useSelector } from 'react-redux'
 
 interface CustomHeaderProps {
   onMenuPress?: () => void
@@ -24,7 +29,8 @@ export default function CustomHeader ({
   onNotificationPress,
   onProfilePress
 }: CustomHeaderProps) {
-  const [user, setUser] = useState<any>(null)
+  const user = useSelector((state: RootState) => state.user.userData)
+  const dispatch = useDispatch()
 
   const handleNotificationPress = () => {
     if (onNotificationPress) {
@@ -34,22 +40,30 @@ export default function CustomHeader ({
     }
   }
 
-  const handleProfilePress = () => {
-    if (onProfilePress) {
-      onProfilePress()
-    } else {
-      console.log('Profile pressed')
-    }
+  const handleLogout = async () => {
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            dispatch(
+              userLoginState({ token: '', isApproved: false, user: null })
+            )
+            clearStorage_MMKV()
+            router.replace('/auth/login')
+          } catch (error) {
+            Alert.alert('Error', 'Logout failed')
+          }
+        }
+      }
+    ])
   }
 
-  useEffect(() => {
-    const userData = getData_MMKV('user-data')
-    console.log(userData)
-    if (userData && userData.length > 0) {
-      setUser(JSON.parse(userData))
-    }
-  }, [])
-
+  const handleProfilePress = () => {
+    handleLogout()
+  }
   return (
     <>
       <StatusBar barStyle='light-content' backgroundColor='#1e5f74' />

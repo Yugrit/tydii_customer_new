@@ -1,0 +1,6 @@
+export enum ServiceTypeEnum {
+  WASH_N_FOLD = 'WASH_N_FOLD',
+  DRYCLEANING = 'DRYCLEANING',
+  IRONING = 'IRONING',
+  TAILORING = 'TAILORING'
+}

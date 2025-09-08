@@ -91,23 +91,28 @@ export default function OtpVerification () {
       console.log(response)
       console.log('OTP Verification Response:', response)
 
-      const { token, user, isApproved, sub } = response
-      const userApprovalStatus = user?.isApproved || isApproved || 'approved'
+      const { token } = response
+      console.log(response)
+      const userApprovalStatus: any = 'approved' // Replace with actual status from response if available
 
       if (token) {
         // ✅ Update Redux state
         dispatch(
           userLoginState({
             token,
-            isApproved: userApprovalStatus,
-            user: user || {}
+            isApproved: true,
+            userData: {
+              id: response?.payload?.sub,
+              email: response?.payload?.email,
+              name: response?.payload?.name
+            }
           })
         )
 
         // ✅ Save to MMKV
 
         storeData_MMKV('user-token', token)
-        storeData_MMKV('sub', sub)
+        storeData_MMKV('sub', response?.payload?.sub)
 
         console.log('✅ User data saved to Redux and MMKV')
 

@@ -1,4 +1,5 @@
 // components/ServicesSection.tsx
+import { ServiceTypeEnum } from '@/enums'
 import { useThemeColors } from '@/hooks/useThemeColor'
 import { startOrder } from '@/Redux/slices/orderSlice'
 import { usePathname, useRouter } from 'expo-router'
@@ -20,19 +21,19 @@ export default function ServicesSection () {
 
   const services = [
     {
-      id: 'wash-fold',
+      id: ServiceTypeEnum.WASH_N_FOLD,
       title: 'Wash & Fold',
       serviceType: 'Wash & Fold',
       image: require('../assets/images/wash.png')
     },
     {
-      id: 'dry-clean',
+      id: ServiceTypeEnum.DRYCLEANING,
       title: 'Dry Clean',
       serviceType: 'Dry Cleaning',
       image: require('../assets/images/dryclean.png')
     },
     {
-      id: 'tailoring',
+      id: ServiceTypeEnum.TAILORING,
       title: 'Tailoring',
       serviceType: 'Tailoring',
       image: require('../assets/images/tailor.png')
@@ -43,10 +44,10 @@ export default function ServicesSection () {
     console.log(`Service pressed: ${service.id}`)
 
     // Dispatch to Redux to start order flow
-    dispatch(startOrder(service.serviceType))
+    dispatch(startOrder(service.id))
 
     // Navigate to order flow while staying in the same tab
-    router.push('/order/pickup-details')
+    router.push('/order')
   }
 
   return (

@@ -1,23 +1,22 @@
 // app/(tabs)/index.tsx
-import { userLoginState } from '@/Redux/slices/userSlices'
 import FavouriteLaundry from '@/components/FavouriteLaundary'
 import OfferedLaundry from '@/components/OfferedLaundary'
 import Services from '@/components/Services'
 import Loader from '@/components/ui/Loader'
 import MainCard from '@/components/ui/MainCard'
-import ApiService from '@/services/ApiService'
 import {
-  clearStorage_MMKV,
-  getData_MMKV,
-  storeData_MMKV
-} from '@/services/StorageService'
-import { router } from 'expo-router'
+  logout,
+  transformUserData,
+  userLoginState
+} from '@/Redux/slices/userSlices'
+import ApiService from '@/services/ApiService'
+import { storeData_MMKV } from '@/services/StorageService'
+import { useRouter } from 'expo-router'
 import { jwtDecode } from 'jwt-decode'
 import React, { useEffect, useState } from 'react'
-import { Alert, ScrollView, StyleSheet } from 'react-native'
+import { ScrollView, StyleSheet } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
-// ✅ Interface for JWT
 interface JWTPayload {
   sub: string
   exp: number
@@ -27,98 +26,98 @@ interface JWTPayload {
 
 export default function HomePage () {
   const dispatch = useDispatch()
-  const user = useSelector((state: any) => state.user)
+  const router = useRouter()
+  const { token, userData, isApproved } = useSelector(
+    (state: any) => state.user
+  )
 
-  // console.log(getData_MMKV('user-token'))
+  const [loading, setLoading] = useState(false)
 
-  const [userData, setUserData] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-
-  const token = user?.token
-  const isApproved = user?.isApproved
-
-  // 🔄 Fetch user from API
-  const fetchFromAPI = async () => {
-    if (!token) return
-    try {
-      setLoading(true)
-      const decodedToken = jwtDecode<JWTPayload>(token)
-      const userId = decodedToken.sub
-
-      const response = await ApiService.get({
-        url: `/customer/users`,
-        params: { id: userId, limit: 1, page: 1 }
-      })
-
-      const freshUser = response.data?.[0]
-      if (freshUser) {
-        setUserData(freshUser)
-        storeData_MMKV('user-data', JSON.stringify(freshUser))
-
-        // update redux
-        dispatch(
-          userLoginState({
-            token,
-            isApproved: freshUser.isApproved || 'approved'
-          })
-        )
-      }
-    } catch (error) {
-      console.error('❌ Error fetching user from API:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // ✅ On mount - first try MMKV, else API
   useEffect(() => {
-    async function init () {
-      try {
-        setLoading(true)
-        const savedUserData = getData_MMKV('user-data')
+    async function checkAndFetchUserData () {
+      // If no token, redirect to login
+      if (!token) {
+        console.log('❌ No token found, redirecting to login')
+        router.replace('/auth/login')
+        return
+      }
 
-        if (savedUserData) {
-          console.log('📦 Loaded from MMKV:', savedUserData)
-          setUserData(JSON.parse(savedUserData))
-        } else {
-          await fetchFromAPI()
+      // If userData is missing or incomplete, fetch it
+      if (!userData || !userData.id) {
+        console.log('📡 UserData missing, fetching from API...')
+        setLoading(true)
+
+        try {
+          const decodedToken = jwtDecode<JWTPayload>(token)
+          const userId = decodedToken.sub
+
+          if (!userId) {
+            throw new Error('No userId in token')
+          }
+
+          console.log('🆔 Fetching user profile for:', userId)
+
+          const response = await ApiService.get({
+            url: `/customer/users`,
+            params: { id: userId, limit: 10, page: 1 }
+          })
+
+          const serverUserData = response.data?.[0]
+
+          if (!serverUserData) {
+            throw new Error('No user data from API')
+          }
+
+          // Transform server data
+          const transformedUserData = transformUserData(serverUserData)
+
+          // Update Redux state
+          dispatch(
+            userLoginState({
+              token: token,
+              isApproved: true,
+              userData: transformedUserData
+            })
+          )
+
+          // Save to MMKV for future app launches
+          storeData_MMKV('user-data', transformedUserData)
+
+          console.log('✅ User data fetched and saved')
+        } catch (error) {
+          console.error('❌ Failed to fetch user data:', error)
+
+          // Clear invalid token and redirect to login
+          dispatch(logout())
+          router.replace('/auth/login')
+        } finally {
+          setLoading(false)
         }
-      } catch (error) {
-        console.error('Error fetching user data:', error)
-      } finally {
-        setLoading(false)
+      } else {
+        console.log('✅ UserData already available:', userData.name)
       }
     }
 
-    init()
-  }, [token])
+    checkAndFetchUserData()
+  }, [token, userData, dispatch, router])
 
-  // ✅ Logout
-  const handleLogout = async () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            dispatch(
-              userLoginState({ token: '', isApproved: false, user: null })
-            )
-            clearStorage_MMKV()
-            router.replace('/auth/login')
-          } catch (error) {
-            Alert.alert('Error', 'Logout failed')
-          }
-        }
-      }
-    ])
-  }
-
-  // ✅ Loader
+  // Show loader while fetching user data
   if (loading) {
-    return <Loader />
+    return (
+      <Loader
+        message='Loading your profile...'
+        subMessage='Please wait while we fetch your data'
+        color='#008ECC'
+      />
+    )
   }
+
+  // Show loader if we have token but no userData yet
+  if (token && (!userData || !userData.id)) {
+    return <Loader message='Preparing your account...' color='#008ECC' />
+  }
+
+  console.log('✅ Rendering HomePage with user:', userData?.name)
 
   return (
     <ScrollView style={styles.container}>
@@ -136,5 +135,9 @@ export default function HomePage () {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' }
+  container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+    paddingTop: 10
+  }
 })

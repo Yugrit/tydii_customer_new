@@ -125,10 +125,11 @@ const createStyles = (colors: any) =>
     card: {
       backgroundColor: colors.light,
       borderRadius: 15,
-      padding: 20,
+      paddingHorizontal: 20,
+      paddingTop: 20,
       marginHorizontal: 5,
       flex: 1,
-      minHeight: 140
+      minHeight: 120
     },
     content: {
       alignItems: 'center',
@@ -136,10 +137,10 @@ const createStyles = (colors: any) =>
       justifyContent: 'space-between'
     },
     title: {
-      fontSize: 28,
+      fontSize: 24,
       fontWeight: '800',
       color: colors.primary,
-      marginBottom: 10,
+      marginBottom: 5,
       textAlign: 'center',
       paddingHorizontal: 10,
       paddingRight: 6, // Extra right padding to prevent cutoff
@@ -148,11 +149,11 @@ const createStyles = (colors: any) =>
       flexShrink: 1 // Allow text to shrink properly
     },
     description: {
-      fontSize: 14,
+      fontSize: 12,
       color: colors.textSecondary,
       textAlign: 'center',
       lineHeight: 20,
-      marginBottom: 16,
+      marginBottom: 14,
       paddingHorizontal: 15,
       paddingRight: 8, // Extra right padding to prevent cutoff
       includeFontPadding: false,
@@ -164,8 +165,8 @@ const createStyles = (colors: any) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      paddingVertical: 12,
-      paddingHorizontal: 22, // Increase horizontal padding
+      paddingVertical: 10,
+      paddingHorizontal: 18, // Increase horizontal padding
       borderRadius: 30,
       minWidth: 160,
       borderColor: '#AEE0F5',
@@ -177,7 +178,8 @@ const createStyles = (colors: any) =>
         height: 1
       },
       shadowOpacity: 0.1,
-      shadowRadius: 2
+      shadowRadius: 2,
+      marginBottom: 20
     },
     buttonText: {
       color: colors.textSecondary,

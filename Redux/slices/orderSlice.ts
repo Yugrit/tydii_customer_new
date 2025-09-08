@@ -1,4 +1,5 @@
 // Redux/slices/orderSlice.ts
+import { ServiceTypeEnum } from '@/enums'
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 interface OrderData {
@@ -10,7 +11,7 @@ interface OrderData {
 }
 
 interface OrderState {
-  serviceType: string
+  serviceType: ServiceTypeEnum
   currentStep: number
   totalSteps: number
   orderData: OrderData
@@ -18,7 +19,7 @@ interface OrderState {
 }
 
 const initialState: OrderState = {
-  serviceType: 'Wash & Fold',
+  serviceType: ServiceTypeEnum.WASH_N_FOLD,
   currentStep: 1,
   totalSteps: 4,
   orderData: {},
@@ -29,7 +30,7 @@ const orderSlice = createSlice({
   name: 'order',
   initialState,
   reducers: {
-    startOrder: (state, action: PayloadAction<string>) => {
+    startOrder: (state, action: PayloadAction<ServiceTypeEnum>) => {
       state.serviceType = action.payload
       state.currentStep = 1
       state.isOrderActive = true
@@ -57,7 +58,7 @@ const orderSlice = createSlice({
       state.orderData[step] = data
     },
     resetOrder: state => {
-      state.serviceType = 'Wash & Fold'
+      state.serviceType = ServiceTypeEnum.WASH_N_FOLD
       state.currentStep = 1
       state.orderData = {}
       state.isOrderActive = false

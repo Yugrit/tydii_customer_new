@@ -60,24 +60,16 @@ export default function StepIndicator ({
     const isInactive = index > currentStep - 1
     const isLastStep = index === steps.length - 1
 
-    // Animated styles for step circle
+    // Animated styles for step circle (without scaling)
     const animatedCircleStyle = {
       backgroundColor: stepAnimatedValues[index].interpolate({
         inputRange: [0, 1],
-        outputRange: ['#E0E0E0', isCompleted ? '#4CAF50' : colors.primary]
+        outputRange: [colors.surface, isCompleted ? '#4CAF50' : colors.surface]
       }),
       borderColor: stepAnimatedValues[index].interpolate({
         inputRange: [0, 1],
-        outputRange: ['#E0E0E0', isCompleted ? '#4CAF50' : colors.primary]
-      }),
-      transform: [
-        {
-          scale: stepAnimatedValues[index].interpolate({
-            inputRange: [0, 1],
-            outputRange: [0.8, 1]
-          })
-        }
-      ]
+        outputRange: ['#E0E0E0', isCompleted ? '#4CAF50' : '#008ECC']
+      })
     }
 
     // Text colors based on state
@@ -87,14 +79,20 @@ export default function StepIndicator ({
       ? colors.primary
       : '#9E9E9E'
 
-    const numberTextColor = isInactive ? '#9E9E9E' : 'white'
+    const numberTextColor = isInactive ? '#9E9E9E' : '#1876A9'
+
+    // Check if this line should be green (completed)
+    const isLineCompleted = index < currentStep - 1
 
     // Animated line styles
     const animatedLineStyle = !isLastStep
       ? {
           backgroundColor: lineAnimatedValues[index]?.interpolate({
             inputRange: [0, 1],
-            outputRange: ['#E0E0E0', colors.primary]
+            outputRange: [
+              '#E0E0E0',
+              isLineCompleted ? '#4CAF50' : colors.primary
+            ] // Green for completed, primary for active
           }),
           width: lineAnimatedValues[index]?.interpolate({
             inputRange: [0, 1],
@@ -111,15 +109,7 @@ export default function StepIndicator ({
             {isCompleted ? (
               <Animated.View
                 style={{
-                  opacity: stepAnimatedValues[index],
-                  transform: [
-                    {
-                      scale: stepAnimatedValues[index].interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, 1]
-                      })
-                    }
-                  ]
+                  opacity: stepAnimatedValues[index]
                 }}
               >
                 <Check size={18} color='white' strokeWidth={3} />
@@ -175,24 +165,16 @@ const styles = StyleSheet.create({
     zIndex: 2
   },
   stepCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 4,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4
+    marginBottom: 8
   },
   stepNumber: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: 'bold'
   },
   stepLabel: {
@@ -204,7 +186,7 @@ const styles = StyleSheet.create({
   },
   lineContainer: {
     position: 'absolute',
-    top: 20,
+    top: 22,
     left: '50%',
     right: '-50%',
     height: 4,

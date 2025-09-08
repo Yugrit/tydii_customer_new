@@ -1,6 +1,9 @@
 // components/order/forms/WashFoldForm.tsx
-import React, { useEffect } from 'react'
+import { updateSelectedClothes } from '@/Redux/slices/orderSlice'
+import ApiService from '@/services/ApiService'
+import React, { useEffect, useState } from 'react'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { useDispatch } from 'react-redux'
 
 interface WashFoldFormProps {
   formData: any
@@ -46,7 +49,7 @@ const ClothingCounter = ({
           style={[styles.counterButton, styles.decreaseButton]}
           onPress={decrease}
         >
-          <Text style={styles.counterButtonText}>−</Text>
+          <Text style={styles.counterButtonText}>-</Text>
         </TouchableOpacity>
 
         <Text
@@ -72,14 +75,67 @@ export default function WashFoldForm ({
   onFormDataChange,
   onErrorsChange
 }: WashFoldFormProps) {
+  const dispatch = useDispatch()
+  const [clothNames, setClothNames] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch cloth names from API
+  useEffect(() => {
+    const fetchClothNames = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        console.log('🔄 Fetching wash & fold cloth names...')
+
+        const response = await ApiService.get({
+          url: '/customer/core/dropdown/wash_fold'
+        })
+
+        console.log('📊 Wash & fold API response:', response)
+
+        // Extract cloth names from API response structure
+        // Expected: { id: 1, key: "wash_fold", value: ["Comforter / Duvet", "Towel-Only Wash and Fold", ...] }
+        let clothTypes = []
+
+        if (response.data && Array.isArray(response.data.value)) {
+          clothTypes = response.data.value
+        } else if (Array.isArray(response.data)) {
+          clothTypes = response.data
+        } else if (response.value && Array.isArray(response.value)) {
+          clothTypes = response.value
+        }
+
+        // Fallback cloth types if API fails or returns empty
+        if (clothTypes.length === 0) {
+          console.log('⚠️ Using fallback cloth types')
+          clothTypes = ['Mix Cloth', 'Household Cloth', 'Door Mats', 'Curtains']
+        }
+
+        setClothNames(clothTypes)
+        console.log('✅ Loaded cloth names:', clothTypes)
+      } catch (apiError) {
+        console.error('❌ Failed to fetch cloth names:', apiError)
+        setError('Failed to load cloth types')
+
+        // Use fallback cloth types
+        setClothNames(['Mix Cloth', 'Household Cloth', 'Door Mats', 'Curtains'])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchClothNames()
+  }, [])
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    const totalWeight =
-      (formData.mixCloth || 0) +
-      (formData.householdCloth || 0) +
-      (formData.doorMats || 0) +
-      (formData.curtains || 0)
+    // Calculate total weight from all cloth types
+    const totalWeight = clothNames.reduce((acc, clothName) => {
+      return acc + (formData[clothName] || 0)
+    }, 0)
 
     if (totalWeight === 0) {
       newErrors.clothingItems = 'Please select at least one clothing type'
@@ -91,30 +147,48 @@ export default function WashFoldForm ({
 
   useEffect(() => {
     validateForm()
-  }, [formData])
+  }, [formData, clothNames])
 
-  const handleClothingChange = (type: string, value: number) => {
-    onFormDataChange({ [type]: value })
+  const handleClothingChange = (clothType: string, value: number) => {
+    const updatedData = { [clothType]: value }
+    onFormDataChange(updatedData)
+
+    // Save to Redux whenever data changes
+    const updatedFormData = { ...formData, ...updatedData }
+    dispatch(updateSelectedClothes(updatedFormData))
   }
 
-  const clothingTypes = [
-    { key: 'mixCloth', label: 'Mix Cloth' },
-    { key: 'householdCloth', label: 'Household Cloth' },
-    { key: 'doorMats', label: 'Door Mats' },
-    { key: 'curtains', label: 'Curtains' }
-  ]
+  // Show loading state
+  if (loading) {
+    return (
+      <View style={styles.inputContainer}>
+        <Text style={styles.loadingText}>Loading cloth types...</Text>
+      </View>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <View style={styles.inputContainer}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      </View>
+    )
+  }
 
   return (
     <View style={styles.inputContainer}>
       {/* Clothing Type Counters */}
       <View style={styles.clothingSection}>
-        {clothingTypes.map(({ key, label }) => (
+        {clothNames.map(clothName => (
           <ClothingCounter
-            key={key}
-            label={label}
-            value={formData[key] || 0}
-            onChange={value => handleClothingChange(key, value)}
-            selected={(formData[key] || 0) > 0}
+            key={clothName}
+            label={clothName}
+            value={formData[clothName] || 0}
+            onChange={value => handleClothingChange(clothName, value)}
+            selected={(formData[clothName] || 0) > 0}
           />
         ))}
       </View>
@@ -137,6 +211,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 10
   },
+
   // Clothing Counter Styles
   clothingSection: {
     gap: 15
@@ -145,7 +220,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
     paddingVertical: 15,
     borderWidth: 1,
     borderColor: '#e0e0e0',
@@ -158,6 +233,7 @@ const styles = StyleSheet.create({
   },
   clothingLabel: {
     fontSize: 16,
+    marginRight: 10,
     color: '#666',
     flex: 1
   },
@@ -168,7 +244,7 @@ const styles = StyleSheet.create({
   counterControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 15
+    gap: 0
   },
   counterButton: {
     width: 30,
@@ -198,6 +274,21 @@ const styles = StyleSheet.create({
   },
   counterValueSelected: {
     color: '#008ECC'
+  },
+
+  // Loading and Error Styles
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    padding: 20,
+    fontStyle: 'italic'
+  },
+  errorContainer: {
+    padding: 16,
+    backgroundColor: '#ffebee',
+    borderRadius: 8,
+    margin: 10
   },
   errorText: {
     fontSize: 12,

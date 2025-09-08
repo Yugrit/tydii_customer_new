@@ -1,6 +1,6 @@
 // app/(tabs)/(home)/order.tsx
 import { RootState } from '@/Redux/Store'
-import { nextStep, prevStep } from '@/Redux/slices/orderSlice'
+import { nextStep, prevStep, resetOrder } from '@/Redux/slices/orderSlice'
 import OrderConfirmation from '@/components/order/ConfirmOrder'
 import OrderHeader from '@/components/order/OrderHeader'
 import PickupDetailsForm from '@/components/order/PickupDetails'
@@ -8,8 +8,9 @@ import SelectClothesForm from '@/components/order/SelectClothes'
 import SelectStoreForm from '@/components/order/SelectStore'
 import { useCustomBackBehavior } from '@/hooks/useBackHook'
 import { useThemeColors } from '@/hooks/useThemeColor'
+import { useFocusEffect } from '@react-navigation/native'
 import { router } from 'expo-router'
-import React, { useCallback, useMemo, useRef } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import {
   Animated,
   Dimensions,
@@ -38,7 +39,7 @@ function debounce<T extends (...args: any[]) => void>(
 
 export default function OrderScreen () {
   const dispatch = useDispatch()
-  const { serviceType, currentStep, totalSteps } = useSelector(
+  const { serviceType, currentStep, totalSteps, isOrderActive } = useSelector(
     (state: RootState) => state.order
   )
 
@@ -49,6 +50,34 @@ export default function OrderScreen () {
 
   const slideAnim = useRef(new Animated.Value(0)).current
   const isAnimatingRef = useRef(false)
+
+  // Clear order data when leaving the screen
+  useFocusEffect(
+    useCallback(() => {
+      // This runs when the screen gains focus
+      console.log('📱 Order screen focused')
+
+      // Return cleanup function that runs when screen loses focus
+      return () => {
+        console.log('📱 Order screen unfocused - clearing order data')
+        // Only clear if order is not completed
+        if (isOrderActive) {
+          dispatch(resetOrder())
+        }
+      }
+    }, [dispatch, isOrderActive])
+  )
+
+  // Alternative method: Clear on component unmount
+  useEffect(() => {
+    return () => {
+      // This runs when component unmounts
+      console.log('🗑️ Order screen unmounting - clearing order data')
+      if (isOrderActive) {
+        dispatch(resetOrder())
+      }
+    }
+  }, [dispatch, isOrderActive])
 
   // Debounced state update using the fixed debounce function
   const debouncedStateUpdate = useCallback(
@@ -111,8 +140,11 @@ export default function OrderScreen () {
   }, [animateToStep, dispatch])
 
   const handleBackToHome = useCallback(() => {
+    // Clear order data before going back
+    console.log('🏠 Going back to home - clearing order data')
+    dispatch(resetOrder())
     router.back()
-  }, [])
+  }, [dispatch])
 
   // Memoized step component to prevent unnecessary re-renders
   const currentStepComponent = useMemo(() => {
@@ -138,7 +170,7 @@ export default function OrderScreen () {
       default:
         return null
     }
-  }, [currentStep, handleNext, handlePrev, handleBackToHome])
+  }, [currentStep, handleNext, handlePrev, handleBackToHome, serviceType])
 
   return (
     <ScrollView style={styles.container}>

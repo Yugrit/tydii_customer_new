@@ -1,5 +1,6 @@
 // components/order/forms/ConfirmOrderForm.tsx
 import { ServiceTypeEnum } from '@/enums'
+import { RootState } from '@/Redux/Store'
 import { router } from 'expo-router'
 import { Star } from 'lucide-react-native'
 import React, { useState } from 'react'
@@ -13,38 +14,8 @@ import {
   TouchableOpacity,
   View
 } from 'react-native'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import OrderNavigationButtons from './OrderNavigationButtons'
-
-interface OrderItem {
-  id: string
-  name: string
-  description: string[]
-  price: number
-  quantity?: number
-  category: string
-  icon?: string
-}
-
-interface Store {
-  id: string
-  name: string
-  rating: number
-  image: string
-}
-
-interface OrderData {
-  serviceType: ServiceTypeEnum
-  store: Store
-  items: OrderItem[]
-  fees: {
-    platformFee: number
-    tax: number
-    deliveryFee: number
-  }
-  subtotal: number
-  total: number
-}
 
 interface ConfirmOrderFormProps {
   serviceType: ServiceTypeEnum
@@ -53,28 +24,23 @@ interface ConfirmOrderFormProps {
 
 const ServiceIcon = ({ category }: { category: string }) => {
   const getIcon = () => {
-    switch (category) {
-      case 'shirt':
-        return '👔'
-      case 'pant':
-        return '👖'
-      case 'skirt':
-        return '👗'
-      case 'top':
-        return '👕'
-      case 'saree':
-        return '🥻'
-      case 'mixCloth':
-        return '👕'
-      case 'householdCloth':
-        return '🏠'
-      case 'doorMats':
-        return '🚪'
-      case 'curtains':
-        return '🪟'
-      default:
-        return '👕'
-    }
+    const categoryLower = category.toLowerCase()
+
+    if (categoryLower.includes('mix') || categoryLower.includes('cloth'))
+      return '👕'
+    if (categoryLower.includes('household') || categoryLower.includes('towel'))
+      return '🏠'
+    if (
+      categoryLower.includes('shirt') ||
+      categoryLower.includes('dress shirt')
+    )
+      return '👔'
+    if (categoryLower.includes('pant') || categoryLower.includes('trouser'))
+      return '👖'
+    if (categoryLower.includes('duvet') || categoryLower.includes('comforter'))
+      return '🛏️'
+
+    return '👕' // default
   }
 
   return (
@@ -84,34 +50,33 @@ const ServiceIcon = ({ category }: { category: string }) => {
   )
 }
 
-const OrderItem = ({ item }: { item: OrderItem }) => {
+const OrderItem = ({ item }: { item: any }) => {
   return (
-    <View style={styles.orderItem}>
-      <ServiceIcon category={item.category} />
-      <View style={styles.itemDetails}>
-        <Text style={styles.itemName}>{item.name}</Text>
-        {item.description.map((desc, index) => (
-          <Text key={index} style={styles.itemDescription}>
-            {desc}
-          </Text>
-        ))}
+    <View style={styles.orderItemRow}>
+      <ServiceIcon category={item.item_name || item.category || 'cloth'} />
+      <View style={styles.itemInfo}>
+        <Text style={styles.itemName}>{item.item_name || item.category}</Text>
+        <Text style={styles.itemWeight}>
+          {item.quantity} {item.item_type === 'WASH_N_FOLD' ? 'lb' : 'pcs'}
+        </Text>
       </View>
-      <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
+      <Text style={styles.itemPrice}>$ {item.price.toFixed(2)}</Text>
     </View>
   )
 }
 
-const StoreInfo = ({ store }: { store: Store }) => {
+const StoreInfo = ({ store }: { store: any }) => {
   const renderStars = () => {
     const stars = []
-    const fullStars = Math.floor(store.rating)
-    const hasHalfStar = store.rating - fullStars >= 0.5
+    const rating = store.rating || 4.5
+    const fullStars = Math.floor(rating)
+    const hasHalfStar = rating - fullStars >= 0.5
 
     for (let i = 0; i < fullStars; i++) {
       stars.push(
         <Star
           key={`full-${i}`}
-          size={14}
+          size={16}
           color='#FFD700'
           fill='#FFD700'
           strokeWidth={0}
@@ -123,7 +88,7 @@ const StoreInfo = ({ store }: { store: Store }) => {
       stars.push(
         <Star
           key='half'
-          size={14}
+          size={16}
           color='#FFD700'
           fill='#FFD700'
           strokeWidth={0}
@@ -135,10 +100,19 @@ const StoreInfo = ({ store }: { store: Store }) => {
   }
 
   return (
-    <View style={styles.storeInfo}>
-      <Image source={{ uri: store.image }} style={styles.storeImage} />
-      <View style={styles.storeDetails}>
-        <Text style={styles.storeName}>{store.name}</Text>
+    <View style={styles.storeContainer}>
+      <Image
+        source={{
+          uri:
+            store.uploadDoc?.[0]?.fileUrl ||
+            'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=100&h=80&fit=crop'
+        }}
+        style={styles.storeImage}
+      />
+      <View style={styles.storeInfo}>
+        <Text style={styles.storeName}>
+          {store.store_name || store.storeName || 'Laundry Basket'}
+        </Text>
         <View style={styles.storeRating}>{renderStars()}</View>
       </View>
     </View>
@@ -197,123 +171,32 @@ export default function ConfirmOrderForm ({
   onPrev
 }: ConfirmOrderFormProps) {
   const dispatch = useDispatch()
+  const { orderData } = useSelector((state: RootState) => state.order)
+
   const [couponCode, setCouponCode] = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
 
-  // Dynamic data based on service type
-  const getOrderData = (): OrderData => {
-    const baseStore = {
-      id: '1',
-      name: 'Laundry Basket',
-      rating: 4.5,
-      image:
-        'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=100&h=80&fit=crop'
-    }
+  // Calculate totals from Redux data
+  const calculateTotals = () => {
+    const items = orderData.selectedClothes?.items || []
+    const subtotal = items.reduce((sum, item) => sum + item.price, 0)
+    const platformFee = 0.0
+    const tax = 1.0
+    const deliveryFee = 2.0
+    const total = subtotal + platformFee + tax + deliveryFee
 
-    const baseFees = {
-      platformFee: 0.0,
-      tax: 1.0,
-      deliveryFee: 2.0
-    }
-
-    switch (serviceType) {
-      case ServiceTypeEnum.WASH_N_FOLD:
-        return {
-          serviceType,
-          store: baseStore,
-          items: [
-            {
-              id: '1',
-              name: 'Mix Cloth',
-              description: ['Cotton Blend', 'Regular Wash'],
-              price: 12.0,
-              category: 'mixCloth'
-            },
-            {
-              id: '2',
-              name: 'Household Cloth',
-              description: ['Towels & Linens', 'Hot Wash'],
-              price: 8.0,
-              category: 'householdCloth'
-            },
-            {
-              id: '3',
-              name: 'Curtains',
-              description: ['Delicate Care', 'Gentle Cycle'],
-              price: 5.0,
-              category: 'curtains'
-            }
-          ],
-          fees: baseFees,
-          subtotal: 25.0,
-          total: 28.0
-        }
-
-      case ServiceTypeEnum.DRYCLEANING:
-        return {
-          serviceType,
-          store: baseStore,
-          items: [
-            {
-              id: '1',
-              name: 'Shirt - Male',
-              description: ['Button Fix', 'Bottom Length Crop'],
-              price: 10.0,
-              category: 'shirt'
-            },
-            {
-              id: '2',
-              name: 'Skirt - Female',
-              description: ['Button Fix', 'Waist Fix'],
-              price: 15.0,
-              category: 'skirt'
-            }
-          ],
-          fees: baseFees,
-          subtotal: 25.0,
-          total: 28.0
-        }
-
-      case ServiceTypeEnum.TAILORING:
-        return {
-          serviceType,
-          store: baseStore,
-          items: [
-            {
-              id: '1',
-              name: 'Shirt - Male',
-              description: ['Hemming', 'Sleeve Adjustment'],
-              price: 18.0,
-              category: 'shirt'
-            },
-            {
-              id: '2',
-              name: 'Pant - Female',
-              description: ['Waist Adjustment', 'Length Alteration'],
-              price: 22.0,
-              category: 'pant'
-            }
-          ],
-          fees: baseFees,
-          subtotal: 40.0,
-          total: 43.0
-        }
-
-      default:
-        return {
-          serviceType,
-          store: baseStore,
-          items: [],
-          fees: baseFees,
-          subtotal: 0,
-          total: 0
-        }
+    return {
+      subtotal,
+      platformFee,
+      tax,
+      deliveryFee,
+      total: appliedCoupon ? total * 0.9 : total
     }
   }
 
-  const orderData = getOrderData()
+  const totals = calculateTotals()
 
   const applyCoupon = () => {
     if (couponCode.toUpperCase() === 'SAVE10') {
@@ -328,7 +211,6 @@ export default function ConfirmOrderForm ({
   const handlePaymentConfirm = () => {
     setIsProcessing(true)
     setShowPaymentModal(false)
-
     router.dismissAll()
     router.replace('./orderconfirmed')
   }
@@ -337,17 +219,13 @@ export default function ConfirmOrderForm ({
     setShowPaymentModal(false)
   }
 
-  const getServiceTitle = () => {
-    switch (serviceType) {
-      case ServiceTypeEnum.WASH_N_FOLD:
-        return 'Wash & Fold'
-      case ServiceTypeEnum.DRYCLEANING:
-        return 'Dry Cleaning'
-      case ServiceTypeEnum.TAILORING:
-        return 'Tailoring'
-      default:
-        return 'Service'
-    }
+  // Handle case where Redux data is not yet available
+  if (!orderData.selectedClothes || !orderData.selectedStore) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <Text style={styles.loadingText}>Loading order details...</Text>
+      </View>
+    )
   }
 
   return (
@@ -358,97 +236,79 @@ export default function ConfirmOrderForm ({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.formCard}>
-          <Text style={styles.title}>
-            <Text style={styles.titleAccent}>{getServiceTitle()}</Text> Order
-            Summary
-          </Text>
-          <View style={styles.divider} />
+          {/* Selected Shop */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Selected Shop</Text>
+            <StoreInfo store={orderData.selectedStore} />
+          </View>
 
-          <View style={styles.inputContainer}>
-            {/* Selected Shop */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Selected Shop</Text>
-              <StoreInfo store={orderData.store} />
-            </View>
-
-            {/* Selected Services */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Selected Services</Text>
-              {orderData.items.map(item => (
-                <OrderItem key={item.id} item={item} />
+          {/* Selected Services */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Selected Services</Text>
+            <View style={styles.servicesContainer}>
+              {orderData.selectedClothes.items.map((item, index) => (
+                <OrderItem key={`item-${index}`} item={item} />
               ))}
             </View>
+          </View>
 
-            {/* Pricing Breakdown */}
-            <View style={styles.section}>
-              <View style={styles.feeRow}>
-                <Text style={styles.feeLabel}>Platform Fee</Text>
-                <Text style={styles.feeValue}>
-                  $ {orderData.fees.platformFee.toFixed(2)}
-                </Text>
-              </View>
+          {/* Fee Breakdown */}
+          <View style={styles.feesSection}>
+            <View style={styles.feeRow}>
+              <Text style={styles.feeLabel}>Platform Fee</Text>
+              <Text style={styles.feeValue}>
+                $ {totals.platformFee.toFixed(2)}
+              </Text>
+            </View>
 
-              <View style={styles.feeRow}>
+            <View style={styles.feeRow}>
+              <View>
                 <Text style={styles.feeLabel}>Tax</Text>
-                <Text style={styles.feeValue}>
-                  $ {orderData.fees.tax.toFixed(2)}
-                </Text>
               </View>
-
-              <View style={styles.feeRow}>
-                <Text style={styles.feeLabel}>Delivery Partner fee</Text>
-                <Text style={styles.feeValue}>
-                  $ {orderData.fees.deliveryFee.toFixed(2)}
-                </Text>
+              <View>
+                <Text style={styles.feeValue}>$ {totals.tax.toFixed(2)}</Text>
               </View>
             </View>
 
-            {/* Coupon Code */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Coupon Code</Text>
-              <View style={styles.couponContainer}>
-                <TextInput
-                  style={styles.couponInput}
-                  placeholder='Enter Coupon Code'
-                  placeholderTextColor='#999'
-                  value={couponCode}
-                  onChangeText={setCouponCode}
-                  editable={!appliedCoupon}
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.applyButton,
-                    appliedCoupon && styles.appliedButton
-                  ]}
-                  onPress={applyCoupon}
-                  disabled={appliedCoupon}
-                >
-                  <Text
-                    style={[
-                      styles.applyButtonText,
-                      appliedCoupon && styles.appliedButtonText
-                    ]}
-                  >
-                    {appliedCoupon ? '✓' : 'Apply'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              {appliedCoupon && (
-                <Text style={styles.couponSuccess}>
-                  Coupon applied successfully!
-                </Text>
-              )}
+            <View style={styles.feeRow}>
+              <Text style={styles.feeLabel}>Delivery Partner fee</Text>
+              <Text style={styles.feeValue}>
+                $ {totals.deliveryFee.toFixed(2)}
+              </Text>
             </View>
+          </View>
 
-            {/* Total Amount */}
-            <View style={styles.totalSection}>
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Total amount:</Text>
-                <Text style={styles.totalAmount}>
-                  $ {orderData.total.toFixed(2)}
+          {/* Coupon Code */}
+          <View style={styles.couponSection}>
+            <Text style={styles.sectionTitle}>Coupon Code</Text>
+            <View style={styles.couponContainer}>
+              <TextInput
+                style={styles.couponInput}
+                placeholder='Enter Coupon Code'
+                placeholderTextColor='#999'
+                value={couponCode}
+                onChangeText={setCouponCode}
+                editable={!appliedCoupon}
+              />
+              <TouchableOpacity
+                style={[
+                  styles.applyButton,
+                  appliedCoupon && styles.appliedButton
+                ]}
+                onPress={applyCoupon}
+                disabled={appliedCoupon}
+              >
+                <Text style={styles.applyButtonText}>
+                  {appliedCoupon ? '✓' : 'Apply'}
                 </Text>
-              </View>
+              </TouchableOpacity>
             </View>
+          </View>
+
+          {/* Total Amount */}
+          <View style={styles.totalSection}>
+            <Text style={styles.totalLabel}>Total amount:</Text>
+            <Text style={styles.totalAmount}>$ {totals.total.toFixed(2)}</Text>
           </View>
 
           {/* Navigation Buttons */}
@@ -467,7 +327,7 @@ export default function ConfirmOrderForm ({
         visible={showPaymentModal}
         onCancel={handlePaymentCancel}
         onConfirm={handlePaymentConfirm}
-        total={orderData.total}
+        total={totals.total}
       />
     </>
   )
@@ -475,39 +335,32 @@ export default function ConfirmOrderForm ({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
+    backgroundColor: '#f5f5f5'
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   contentContainer: {
-    marginHorizontal: 15,
-    paddingBottom: 20
+    paddingHorizontal: 16,
+    paddingVertical: 20
   },
   formCard: {
     backgroundColor: 'white',
     borderRadius: 12,
     paddingVertical: 20,
-    elevation: 1,
+    paddingHorizontal: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 1
+    shadowRadius: 4,
+    elevation: 3
   },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginHorizontal: 20,
-    color: '#333',
-    marginBottom: 10
-  },
-  titleAccent: {
-    color: '#008ECC'
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#E0E0E0',
-    marginBottom: 15
-  },
-  inputContainer: {
-    paddingHorizontal: 20
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center'
   },
 
   // Sections
@@ -515,29 +368,25 @@ const styles = StyleSheet.create({
     marginBottom: 24
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: '600',
     color: '#333',
     marginBottom: 12
   },
 
   // Store Info
-  storeInfo: {
+  storeContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e9ecef'
+    alignItems: 'center'
   },
   storeImage: {
-    width: 50,
-    height: 40,
-    borderRadius: 6,
-    marginRight: 12
+    width: 60,
+    height: 50,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: '#f0f0f0'
   },
-  storeDetails: {
+  storeInfo: {
     flex: 1
   },
   storeName: {
@@ -550,39 +399,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row'
   },
 
-  // Order Items
-  orderItem: {
+  // Services
+  servicesContainer: {
+    gap: 16
+  },
+  orderItemRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
+    alignItems: 'center'
   },
   serviceIcon: {
-    width: 40,
-    height: 40,
+    width: 32,
+    height: 32,
     borderRadius: 8,
-    backgroundColor: '#e6f3ff',
+    backgroundColor: '#e8f4fd',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12
   },
   serviceIconText: {
-    fontSize: 18
+    fontSize: 16
   },
-  itemDetails: {
+  itemInfo: {
     flex: 1
   },
   itemName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#333',
-    marginBottom: 4
-  },
-  itemDescription: {
-    fontSize: 12,
-    color: '#666',
     marginBottom: 2
+  },
+  itemWeight: {
+    fontSize: 14,
+    color: '#666'
   },
   itemPrice: {
     fontSize: 16,
@@ -590,7 +438,13 @@ const styles = StyleSheet.create({
     color: '#333'
   },
 
-  // Fee Rows
+  // Fees Section
+  feesSection: {
+    marginBottom: 24,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0'
+  },
   feeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -598,77 +452,70 @@ const styles = StyleSheet.create({
     paddingVertical: 8
   },
   feeLabel: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#333'
   },
   feeValue: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '600',
     color: '#333'
   },
 
   // Coupon Section
+  couponSection: {
+    marginBottom: 24
+  },
   couponContainer: {
     flexDirection: 'row',
-    gap: 10
+    gap: 8
   },
   couponInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#e0e0e0',
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    backgroundColor: '#f8f9fa'
+    paddingVertical: 12,
+    fontSize: 16,
+    backgroundColor: 'white'
   },
   applyButton: {
     backgroundColor: '#28a745',
     borderRadius: 8,
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    minWidth: 80
   },
   appliedButton: {
     backgroundColor: '#198754'
   },
   applyButtonText: {
     color: 'white',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600'
-  },
-  appliedButtonText: {
-    fontSize: 16
-  },
-  couponSuccess: {
-    fontSize: 12,
-    color: '#28a745',
-    marginTop: 8,
-    fontWeight: '500'
   },
 
   // Total Section
   totalSection: {
-    borderTopWidth: 2,
-    borderTopColor: '#e9ecef',
-    paddingTop: 16,
-    marginTop: 8
-  },
-  totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
+    marginBottom: 32,
+    paddingTop: 16,
+    borderTopWidth: 2,
+    borderTopColor: '#e0e0e0'
   },
   totalLabel: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
     color: '#333'
   },
   totalAmount: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
-    color: '#28a745'
+    color: '#333'
   },
 
   // Modal Styles

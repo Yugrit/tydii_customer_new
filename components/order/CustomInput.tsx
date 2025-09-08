@@ -220,14 +220,6 @@ const CustomInput = forwardRef<CustomInputRef, CustomInputProps>(
             {label}
             {required && <Text style={styles.required}> *</Text>}
           </Text>
-
-          {/* Add New Button for location type */}
-          {type === 'location' && onAddNew && (
-            <TouchableOpacity style={styles.addNewButton} onPress={onAddNew}>
-              <Plus size={16} color={'#008ECC'} />
-              <Text style={styles.addNewText}>Add New Location</Text>
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Input Container */}

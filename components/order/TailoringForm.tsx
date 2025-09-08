@@ -1,4 +1,5 @@
 // components/order/forms/TailoringForm.tsx
+import ApiService from '@/services/ApiService'
 import React, { useEffect, useState } from 'react'
 import {
   FlatList,
@@ -16,34 +17,44 @@ interface TailoringFormProps {
   onErrorsChange: (errors: Record<string, string>) => void
 }
 
-// Gender Selector Component
-const GenderSelector = ({
+// Category Selector Component
+const CategorySelector = ({
   selected,
-  onSelect
+  onSelect,
+  categories,
+  loading
 }: {
   selected: string
-  onSelect: (gender: string) => void
+  onSelect: (category: string) => void
+  categories: string[]
+  loading: boolean
 }) => {
-  const genders = ['Male', 'Female', 'Kids']
+  if (loading) {
+    return (
+      <View style={styles.categoryContainer}>
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    )
+  }
 
   return (
-    <View style={styles.genderContainer}>
-      {genders.map(gender => (
+    <View style={styles.categoryContainer}>
+      {categories.map(category => (
         <TouchableOpacity
-          key={gender}
+          key={category}
           style={[
-            styles.genderButton,
-            selected === gender && styles.genderButtonSelected
+            styles.categoryButton,
+            selected === category && styles.categoryButtonSelected
           ]}
-          onPress={() => onSelect(gender)}
+          onPress={() => onSelect(category)}
         >
           <Text
             style={[
-              styles.genderText,
-              selected === gender && styles.genderTextSelected
+              styles.categoryText,
+              selected === category && styles.categoryTextSelected
             ]}
           >
-            {gender}
+            {category}
           </Text>
         </TouchableOpacity>
       ))}
@@ -75,7 +86,6 @@ const TailoringTypeDropdown = ({
         <Text style={styles.dropdownArrow}>▼</Text>
       </TouchableOpacity>
 
-      {/* Dropdown Modal */}
       <Modal
         visible={showModal}
         transparent
@@ -118,15 +128,19 @@ const TailoringTypeDropdown = ({
 const TailoringItemRow = ({
   label,
   item,
-  onGenderChange,
+  onCategoryChange,
   onTailoringTypeChange,
-  tailoringOptions
+  tailoringOptions,
+  categories,
+  categoriesLoading
 }: {
   label: string
-  item: { gender: string; tailoringType: string }
-  onGenderChange: (gender: string) => void
+  item: { category: string; tailoringType: string }
+  onCategoryChange: (category: string) => void
   onTailoringTypeChange: (type: string) => void
   tailoringOptions: string[]
+  categories: string[]
+  categoriesLoading: boolean
 }) => {
   return (
     <View style={styles.tailoringItemContainer}>
@@ -140,7 +154,12 @@ const TailoringItemRow = ({
       </View>
 
       <View style={styles.tailoringControls}>
-        <GenderSelector selected={item.gender} onSelect={onGenderChange} />
+        <CategorySelector
+          selected={item.category}
+          onSelect={onCategoryChange}
+          categories={categories}
+          loading={categoriesLoading}
+        />
       </View>
     </View>
   )
@@ -152,13 +171,137 @@ export default function TailoringForm ({
   onFormDataChange,
   onErrorsChange
 }: TailoringFormProps) {
+  const [clothNames, setClothNames] = useState<string[]>([])
+  const [clothCategories, setClothCategories] = useState<string[]>([])
+  const [tailoringTypes, setTailoringTypes] = useState<string[]>([])
+
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch all dropdown data in parallel
+  useEffect(() => {
+    const fetchAllDropdownData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        console.log('🔄 Fetching tailoring form data...')
+
+        // Fetch all APIs in parallel
+        const [
+          clothNameResponse,
+          clothCategoryResponse,
+          tailoringTypeResponse
+        ] = await Promise.all([
+          ApiService.get({ url: '/customer/core/dropdown/cloth_name' }),
+          ApiService.get({ url: '/customer/core/dropdown/cloth_category' }),
+          ApiService.get({ url: '/customer/core/dropdown/tailoring_type' })
+        ])
+
+        console.log('📊 All API responses received:', {
+          clothName: clothNameResponse,
+          clothCategory: clothCategoryResponse,
+          tailoringType: tailoringTypeResponse
+        })
+
+        // Extract cloth names for headers
+        let names = []
+        if (
+          clothNameResponse.data &&
+          Array.isArray(clothNameResponse.data.value)
+        ) {
+          names = clothNameResponse.data.value
+        } else {
+          names = [
+            "Men's Dress Shirt",
+            "Women's Blouse",
+            'Pants / Trousers',
+            'Suit Jacket / Blazer',
+            'Casual Dress'
+          ]
+        }
+
+        // Extract cloth categories for buttons
+        let categories = []
+        if (
+          clothCategoryResponse.data &&
+          Array.isArray(clothCategoryResponse.data.value)
+        ) {
+          categories = clothCategoryResponse.data.value
+        } else {
+          categories = ['Kids', 'Mens', 'Womens']
+        }
+
+        // Extract tailoring types for dropdown
+        let tailoringOptions = []
+        if (
+          tailoringTypeResponse.data &&
+          Array.isArray(tailoringTypeResponse.data.value)
+        ) {
+          tailoringOptions = tailoringTypeResponse.data.value
+        } else {
+          tailoringOptions = [
+            'Button Fix',
+            'Bottom Length Crop',
+            'Waist Fix',
+            'Hem Pants',
+            'Take In Waist',
+            'Shorten Sleeves',
+            'Replace Zipper',
+            'Patch or Repair Tears',
+            'Custom Request (Please describe)',
+            'Adjust Jacket Shoulders'
+          ]
+        }
+
+        setClothNames(names)
+        setClothCategories(categories)
+        setTailoringTypes(tailoringOptions)
+
+        console.log('✅ All tailoring data loaded:', {
+          clothNames: names,
+          clothCategories: categories,
+          tailoringTypes: tailoringOptions
+        })
+      } catch (apiError) {
+        console.error('❌ Failed to fetch tailoring data:', apiError)
+        setError('Failed to load form options')
+
+        // Set fallback data
+        setClothNames([
+          "Men's Dress Shirt",
+          "Women's Blouse",
+          'Pants / Trousers',
+          'Suit Jacket / Blazer',
+          'Casual Dress'
+        ])
+        setClothCategories(['Kids', 'Mens', 'Womens'])
+        setTailoringTypes([
+          'Button Fix',
+          'Bottom Length Crop',
+          'Waist Fix',
+          'Hem Pants',
+          'Take In Waist',
+          'Shorten Sleeves',
+          'Replace Zipper',
+          'Patch or Repair Tears',
+          'Custom Request (Please describe)',
+          'Adjust Jacket Shoulders'
+        ])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAllDropdownData()
+  }, [])
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    // Check if at least one item has a tailoring type selected
-    const clothingTypes = ['shirt', 'pant', 'skirt', 'top', 'saree']
-    const hasItems = clothingTypes.some(
-      type => formData[type] && formData[type].tailoringType
+    // Check if at least one cloth name has a tailoring type selected
+    const hasItems = clothNames.some(
+      clothName => formData[clothName] && formData[clothName].tailoringType
     )
 
     if (!hasItems) {
@@ -172,60 +315,70 @@ export default function TailoringForm ({
 
   useEffect(() => {
     validateForm()
-  }, [formData])
+  }, [formData, clothNames])
 
   const handleTailoringChange = (
-    type: string,
-    field: 'gender' | 'tailoringType',
+    clothName: string,
+    field: 'category' | 'tailoringType',
     value: string
   ) => {
-    const currentItem = formData[type] || { gender: 'Male', tailoringType: '' }
+    const defaultCategory =
+      clothCategories.length > 0 ? clothCategories[0] : 'Mens'
+    const currentItem = formData[clothName] || {
+      category: defaultCategory,
+      tailoringType: ''
+    }
 
     onFormDataChange({
-      [type]: {
+      [clothName]: {
         ...currentItem,
         [field]: value
       }
     })
   }
 
-  const clothingTypes = [
-    { key: 'shirt', label: 'Shirt' },
-    { key: 'pant', label: 'Pant' },
-    { key: 'skirt', label: 'Skirt' },
-    { key: 'top', label: 'Top' },
-    { key: 'saree', label: 'Saree' }
-  ]
+  const defaultCategory =
+    clothCategories.length > 0 ? clothCategories[0] : 'Mens'
 
-  const tailoringOptions = [
-    'Hemming',
-    'Sleeve Adjustment',
-    'Waist Adjustment',
-    'Shoulder Fitting',
-    'Take In/Let Out',
-    'Length Alteration',
-    'Button Replacement',
-    'Zipper Repair',
-    'Custom Fitting',
-    'Complete Resizing'
-  ]
+  // Show loading state
+  if (loading) {
+    return (
+      <View style={styles.inputContainer}>
+        <Text style={styles.loadingText}>Loading tailoring options...</Text>
+      </View>
+    )
+  }
 
   return (
     <View style={styles.inputContainer}>
-      {/* Tailoring Items Selection */}
+      {/* Show error if API calls failed */}
+      {error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
+
+      {/* Tailoring Items Selection - Using cloth names as headers */}
       <View style={styles.tailoringSection}>
-        {clothingTypes.map(({ key, label }) => (
+        {clothNames.map(clothName => (
           <TailoringItemRow
-            key={key}
-            label={label}
-            item={formData[key] || { gender: 'Male', tailoringType: '' }}
-            onGenderChange={gender =>
-              handleTailoringChange(key, 'gender', gender)
+            key={clothName}
+            label={clothName} // Using cloth name as header (e.g., "Men's Dress Shirt")
+            item={
+              formData[clothName] || {
+                category: defaultCategory,
+                tailoringType: ''
+              }
+            }
+            onCategoryChange={category =>
+              handleTailoringChange(clothName, 'category', category)
             }
             onTailoringTypeChange={type =>
-              handleTailoringChange(key, 'tailoringType', type)
+              handleTailoringChange(clothName, 'tailoringType', type)
             }
-            tailoringOptions={tailoringOptions}
+            tailoringOptions={tailoringTypes} // Dynamic tailoring types from API
+            categories={clothCategories} // Dynamic categories from API
+            categoriesLoading={false}
           />
         ))}
       </View>
@@ -241,9 +394,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     paddingHorizontal: 20
   },
-  tailoringSection: {
-    marginBottom: 20
-  },
+  tailoringSection: {},
   tailoringItemContainer: {
     marginBottom: 20,
     paddingBottom: 2,
@@ -258,7 +409,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between'
   },
   clothingLabel: {
-    fontSize: 20,
+    fontSize: 15,
     fontWeight: '600',
     color: '#333',
     flex: 1
@@ -269,13 +420,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center'
   },
-  // Gender Selector Styles
-  genderContainer: {
+
+  // Category Selector Styles
+  categoryContainer: {
     flexDirection: 'row',
     gap: 8,
     flex: 1
   },
-  genderButton: {
+  categoryButton: {
     borderWidth: 1,
     borderColor: '#008ECC',
     borderRadius: 16,
@@ -283,18 +435,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     backgroundColor: 'transparent'
   },
-  genderButtonSelected: {
+  categoryButtonSelected: {
     backgroundColor: '#e6f3ff'
   },
-  genderText: {
+  categoryText: {
     fontSize: 14,
     color: '#008ECC',
     fontWeight: '500'
   },
-  genderTextSelected: {
+  categoryTextSelected: {
     color: '#0056b3',
     fontWeight: '600'
   },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    padding: 20,
+    fontStyle: 'italic'
+  },
+
   // Tailoring Dropdown Styles
   tailoringDropdownContainer: {
     width: 150
@@ -321,6 +481,7 @@ const styles = StyleSheet.create({
     color: '#666',
     marginLeft: 8
   },
+
   // Modal Styles
   modalOverlay: {
     flex: 1,
@@ -367,6 +528,14 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: '#008ECC'
+  },
+
+  // Error Styles
+  errorContainer: {
+    marginBottom: 10,
+    padding: 10,
+    backgroundColor: '#ffebee',
+    borderRadius: 8
   },
   errorText: {
     fontSize: 12,

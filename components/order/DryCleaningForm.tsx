@@ -1,5 +1,6 @@
 // components/order/forms/DrycleaningForm.tsx
-import React, { useEffect } from 'react'
+import ApiService from '@/services/ApiService'
+import React, { useEffect, useState } from 'react'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 interface DrycleaningFormProps {
@@ -9,34 +10,44 @@ interface DrycleaningFormProps {
   onErrorsChange: (errors: Record<string, string>) => void
 }
 
-// Gender Selector Component
-const GenderSelector = ({
+// Category Selector Component
+const CategorySelector = ({
   selected,
-  onSelect
+  onSelect,
+  categories,
+  loading
 }: {
   selected: string
-  onSelect: (gender: string) => void
+  onSelect: (category: string) => void
+  categories: string[]
+  loading: boolean
 }) => {
-  const genders = ['Male', 'Female', 'Kids']
+  if (loading) {
+    return (
+      <View style={styles.categoryContainer}>
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    )
+  }
 
   return (
-    <View style={styles.genderContainer}>
-      {genders.map(gender => (
+    <View style={styles.categoryContainer}>
+      {categories.map(category => (
         <TouchableOpacity
-          key={gender}
+          key={category}
           style={[
-            styles.genderButton,
-            selected === gender && styles.genderButtonSelected
+            styles.categoryButton,
+            selected === category && styles.categoryButtonSelected
           ]}
-          onPress={() => onSelect(gender)}
+          onPress={() => onSelect(category)}
         >
           <Text
             style={[
-              styles.genderText,
-              selected === gender && styles.genderTextSelected
+              styles.categoryText,
+              selected === category && styles.categoryTextSelected
             ]}
           >
-            {gender}
+            {category}
           </Text>
         </TouchableOpacity>
       ))}
@@ -48,13 +59,17 @@ const GenderSelector = ({
 const ClothingItemRow = ({
   label,
   item,
-  onGenderChange,
-  onQuantityChange
+  onCategoryChange,
+  onQuantityChange,
+  categories,
+  categoriesLoading
 }: {
   label: string
-  item: { gender: string; quantity: number }
-  onGenderChange: (gender: string) => void
+  item: { category: string; quantity: number }
+  onCategoryChange: (category: string) => void
   onQuantityChange: (quantity: number) => void
+  categories: string[]
+  categoriesLoading: boolean
 }) => {
   const decrease = () => {
     if (item.quantity > 0) {
@@ -68,32 +83,23 @@ const ClothingItemRow = ({
 
   return (
     <View style={styles.clothingItemContainer}>
-      <View
-        style={{
-          paddingHorizontal: 15,
-          paddingVertical: 7
-        }}
-      >
+      <View style={styles.clothingLabelContainer}>
         <Text style={styles.clothingLabel}>{label}</Text>
       </View>
 
-      <View
-        style={[
-          styles.clothingControls,
-          {
-            backgroundColor: 'white',
-            paddingHorizontal: 5,
-            paddingVertical: 10
-          }
-        ]}
-      >
+      <View style={styles.clothingControls}>
         <View>
-          <GenderSelector selected={item.gender} onSelect={onGenderChange} />
+          <CategorySelector
+            selected={item.category}
+            onSelect={onCategoryChange}
+            categories={categories}
+            loading={categoriesLoading}
+          />
         </View>
 
         <View style={styles.counterControls}>
           <TouchableOpacity style={styles.counterButton} onPress={decrease}>
-            <Text style={styles.counterButtonText}>−</Text>
+            <Text style={styles.counterButtonText}>-</Text>
           </TouchableOpacity>
 
           <Text style={styles.counterValue}>{item.quantity}</Text>
@@ -113,13 +119,94 @@ export default function DrycleaningForm ({
   onFormDataChange,
   onErrorsChange
 }: DrycleaningFormProps) {
+  const [clothNames, setClothNames] = useState<string[]>([])
+  const [clothCategories, setClothCategories] = useState<string[]>([])
+
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch both dropdown APIs in parallel
+  useEffect(() => {
+    const fetchDropdownData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        console.log('🔄 Fetching cloth names and categories...')
+
+        // Fetch both APIs in parallel
+        const [clothNameResponse, clothCategoryResponse] = await Promise.all([
+          ApiService.get({ url: '/customer/core/dropdown/cloth_name' }),
+          ApiService.get({ url: '/customer/core/dropdown/cloth_category' })
+        ])
+
+        console.log('📊 API responses received:', {
+          clothName: clothNameResponse,
+          clothCategory: clothCategoryResponse
+        })
+
+        // Extract cloth names for headers
+        let names = []
+        if (
+          clothNameResponse.data &&
+          Array.isArray(clothNameResponse.data.value)
+        ) {
+          names = clothNameResponse.data.value
+        } else {
+          names = [
+            "Men's Dress Shirt",
+            "Women's Blouse",
+            'Pants / Trousers',
+            'Suit Jacket / Blazer',
+            'Casual Dress'
+          ]
+        }
+
+        // Extract cloth categories for buttons
+        let categories = []
+        if (
+          clothCategoryResponse.data &&
+          Array.isArray(clothCategoryResponse.data.value)
+        ) {
+          categories = clothCategoryResponse.data.value
+        } else {
+          categories = ['Kids', 'Mens', 'Womens']
+        }
+
+        setClothNames(names)
+        setClothCategories(categories)
+
+        console.log('✅ Dropdown data loaded:', {
+          clothNames: names,
+          clothCategories: categories
+        })
+      } catch (apiError) {
+        console.error('❌ Failed to fetch dropdown data:', apiError)
+        setError('Failed to load form options')
+
+        // Set fallback data
+        setClothNames([
+          "Men's Dress Shirt",
+          "Women's Blouse",
+          'Pants / Trousers',
+          'Suit Jacket / Blazer',
+          'Casual Dress'
+        ])
+        setClothCategories(['Kids', 'Mens', 'Womens'])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDropdownData()
+  }, [])
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    // Check if at least one item has quantity > 0
-    const clothingTypes = ['shirt', 'pant', 'skirt', 'top', 'saree']
-    const hasItems = clothingTypes.some(
-      type => formData[type] && formData[type].quantity > 0
+    // Check if at least one cloth name has quantity > 0
+    const hasItems = clothNames.some(
+      clothName => formData[clothName] && formData[clothName].quantity > 0
     )
 
     if (!hasItems) {
@@ -132,46 +219,66 @@ export default function DrycleaningForm ({
 
   useEffect(() => {
     validateForm()
-  }, [formData])
+  }, [formData, clothNames])
 
   const handleClothingChange = (
-    type: string,
-    field: 'gender' | 'quantity',
+    clothName: string,
+    field: 'category' | 'quantity',
     value: string | number
   ) => {
-    const currentItem = formData[type] || { gender: 'Male', quantity: 0 }
+    const defaultCategory =
+      clothCategories.length > 0 ? clothCategories[0] : 'Mens'
+    const currentItem = formData[clothName] || {
+      category: defaultCategory,
+      quantity: 0
+    }
 
     onFormDataChange({
-      [type]: {
+      [clothName]: {
         ...currentItem,
         [field]: value
       }
     })
   }
 
-  const clothingTypes = [
-    { key: 'shirt', label: 'Shirt' },
-    { key: 'pant', label: 'Pant' },
-    { key: 'skirt', label: 'Skirt' },
-    { key: 'top', label: 'Top' },
-    { key: 'saree', label: 'Saree' }
-  ]
+  const defaultCategory =
+    clothCategories.length > 0 ? clothCategories[0] : 'Mens'
+
+  // Show loading state
+  if (loading) {
+    return (
+      <View style={styles.inputContainer}>
+        <Text style={styles.loadingText}>Loading form options...</Text>
+      </View>
+    )
+  }
 
   return (
     <View style={styles.inputContainer}>
-      {/* Clothing Items Selection */}
+      {/* Show error if API calls failed */}
+      {error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
+
+      {/* Clothing Items Selection - Using cloth names as headers */}
       <View style={styles.clothingSection}>
-        {clothingTypes.map(({ key, label }) => (
+        {clothNames.map(clothName => (
           <ClothingItemRow
-            key={key}
-            label={label}
-            item={formData[key] || { gender: 'Male', quantity: 0 }}
-            onGenderChange={gender =>
-              handleClothingChange(key, 'gender', gender)
+            key={clothName}
+            label={clothName} // Using cloth name as header (e.g., "Men's Dress Shirt")
+            item={
+              formData[clothName] || { category: defaultCategory, quantity: 0 }
+            }
+            onCategoryChange={category =>
+              handleClothingChange(clothName, 'category', category)
             }
             onQuantityChange={quantity =>
-              handleClothingChange(key, 'quantity', quantity)
+              handleClothingChange(clothName, 'quantity', quantity)
             }
+            categories={clothCategories} // Using cloth categories as buttons (e.g., "Kids", "Mens", "Womens")
+            categoriesLoading={false}
           />
         ))}
       </View>
@@ -194,9 +301,12 @@ const styles = StyleSheet.create({
     padding: 1,
     marginBottom: 15,
     backgroundColor: '#f8f9fa',
-
     borderWidth: 1,
     borderColor: '#e9ecef'
+  },
+  clothingLabelContainer: {
+    paddingHorizontal: 15,
+    paddingVertical: 7
   },
   clothingLabel: {
     fontSize: 20,
@@ -208,15 +318,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
-    gap: 10
+    gap: 10,
+    backgroundColor: 'white',
+    paddingHorizontal: 5,
+    paddingVertical: 10
   },
-  // Gender Selector Styles
-  genderContainer: {
+
+  // Category Selector Styles
+  categoryContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 5
   },
-  genderButton: {
+  categoryButton: {
     borderWidth: 1,
     borderColor: '#008ECC',
     borderRadius: 16,
@@ -224,18 +338,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     backgroundColor: 'transparent'
   },
-  genderButtonSelected: {
+  categoryButtonSelected: {
     backgroundColor: '#e6f3ff'
   },
-  genderText: {
+  categoryText: {
     fontSize: 14,
     color: '#008ECC',
     fontWeight: '500'
   },
-  genderTextSelected: {
+  categoryTextSelected: {
     color: '#0056b3',
     fontWeight: '600'
   },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    padding: 20,
+    fontStyle: 'italic'
+  },
+
   // Counter Styles
   counterControls: {
     flexDirection: 'row',
@@ -264,29 +386,13 @@ const styles = StyleSheet.create({
     minWidth: 25,
     textAlign: 'center'
   },
-  // Info Styles
-  infoContainer: {
-    marginTop: 20,
-    padding: 16,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#008ECC'
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8
-  },
-  featuresList: {
-    marginLeft: 8
-  },
-  featureItem: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-    lineHeight: 20
+
+  // Error Styles
+  errorContainer: {
+    marginBottom: 10,
+    padding: 10,
+    backgroundColor: '#ffebee',
+    borderRadius: 8
   },
   errorText: {
     fontSize: 12,

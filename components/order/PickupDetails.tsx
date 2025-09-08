@@ -1,4 +1,5 @@
 // components/order/forms/PickupDetailsForm.tsx
+import { updatePickupDetails } from '@/Redux/slices/orderSlice'
 import { generateTimeSlots, isFutureDate } from '@/services/ValidationService'
 import React, { useMemo, useState } from 'react'
 import {
@@ -8,7 +9,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import CustomInput from './CustomInput'
 import OrderNavigationButtons from './OrderNavigationButtons'
 
@@ -23,6 +24,9 @@ export default function PickupDetailsForm ({
 }: PickupDetailsFormProps) {
   const dispatch = useDispatch()
 
+  // Get user addresses from Redux
+  const { userData } = useSelector((state: any) => state.user)
+
   const [formData, setFormData] = useState({
     location: '',
     collectionDate: '',
@@ -34,6 +38,42 @@ export default function PickupDetailsForm ({
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Generate location data from user addresses
+  const locationData = useMemo(() => {
+    const locations: any = []
+
+    if (userData?.addresses && Array.isArray(userData.addresses)) {
+      userData.addresses
+        .filter((addr: any) => !addr.is_deleted) // Only show non-deleted addresses
+        .forEach((address: any) => {
+          // Format address for display
+          const addressLine = `${address.house_no}${
+            address.street_address ? ', ' + address.street_address : ''
+          }`
+          const cityState = `${address.city}, ${address.state} ${address.zipcode}`
+          const displayAddress = `${address.address_type} - ${addressLine}, ${cityState}`
+
+          locations.push({
+            id: address.id,
+            label: displayAddress,
+            value: displayAddress,
+            isPrimary: address.is_primary,
+            address: address
+          })
+        })
+    }
+
+    // Sort to show primary address first
+    locations.sort((a: any, b: any) => {
+      if (a.isPrimary && !b.isPrimary) return -1
+      if (!a.isPrimary && b.isPrimary) return 1
+      return 0
+    })
+
+    // Add "Add New Address" option
+    return locations.map((loc: any) => loc.label)
+  }, [userData?.addresses])
 
   // Get available time slots
   const availableCollectionTimeSlots = useMemo(() => {
@@ -81,6 +121,14 @@ export default function PickupDetailsForm ({
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
 
+    // Handle add new address selection
+    if (field === 'location' && value === '+ Add New Address') {
+      console.log('Navigate to add new address screen')
+      // You can navigate to add address screen here
+      // router.push('/add-address')
+      return
+    }
+
     // Clear related time slots when date changes
     if (field === 'collectionDate') {
       setFormData(prev => ({ ...prev, collectionTime: '' }))
@@ -100,7 +148,6 @@ export default function PickupDetailsForm ({
   }
 
   const handleNext = () => {
-    onNext()
     // const validationErrors = validateForm()
 
     // if (Object.keys(validationErrors).length > 0) {
@@ -111,15 +158,20 @@ export default function PickupDetailsForm ({
     // }
 
     // Save form data to Redux
-    // dispatch(updateOrderData({ pickupDetails: formData }))
-  }
+    dispatch(
+      updatePickupDetails({
+        location: formData.location,
+        collectionDate: formData.collectionDate,
+        collectionTime: formData.collectionTime,
+        deliveryDate: formData.deliveryDate,
+        deliveryTime: formData.deliveryTime,
+        partnerNote: formData.partnerNote,
+        repeatOption: formData.repeatOption
+      })
+    )
 
-  const locationData = [
-    'Home - 123 Main Street',
-    'Office - 456 Business Ave',
-    'Apartment - 789 Residential Blvd',
-    'Other'
-  ]
+    onNext()
+  }
 
   return (
     <View style={styles.container}>
@@ -141,7 +193,6 @@ export default function PickupDetailsForm ({
               type='location'
               required
               dropdownData={locationData}
-              onAddNew={() => console.log('Add new location')}
               value={formData.location}
               onChangeText={text => handleInputChange('location', text)}
               error={errors.location}
@@ -155,14 +206,7 @@ export default function PickupDetailsForm ({
               value={formData.collectionDate}
               onChangeText={text => handleInputChange('collectionDate', text)}
               error={errors.collectionDate}
-              disabledDates={[
-                '2025-09-08', // Tomorrow
-                '2025-09-10', // Tuesday
-                '2025-09-15', // Next Sunday
-                '2025-09-20', // Fully booked
-                '2025-12-25', // Christmas
-                '2025-12-31' // New Year's Eve
-              ]}
+              disabledDates={[]}
             />
 
             <CustomInput
@@ -185,14 +229,7 @@ export default function PickupDetailsForm ({
               value={formData.deliveryDate}
               onChangeText={text => handleInputChange('deliveryDate', text)}
               error={errors.deliveryDate}
-              disabledDates={[
-                '2025-09-08', // Tomorrow
-                '2025-09-10', // Tuesday
-                '2025-09-15', // Next Sunday
-                '2025-09-20', // Fully booked
-                '2025-12-25', // Christmas
-                '2025-12-31' // New Year's Eve
-              ]}
+              disabledDates={[]}
             />
 
             <CustomInput

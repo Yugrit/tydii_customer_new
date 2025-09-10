@@ -1,8 +1,6 @@
-// components/ScrollingTags.tsx
-import React, { useEffect, useRef } from 'react'
-import { Animated, Dimensions, StyleSheet, Text, View } from 'react-native'
-
-const { width } = Dimensions.get('window')
+// components/ScrollingText.tsx
+import React from 'react'
+import { ScrollView, StyleSheet, Text, View } from 'react-native'
 
 interface ScrollingTagsProps {
   tags: string[]
@@ -10,88 +8,70 @@ interface ScrollingTagsProps {
 }
 
 export default function ScrollingTags ({ tags, colors }: ScrollingTagsProps) {
-  const animatedValue = useRef(new Animated.Value(0)).current
-  const scrollWidth = tags.length * 80 // Approximate width per tag
+  // Don't render anything if no tags
+  if (!tags || tags.length === 0) {
+    return null
+  }
 
-  useEffect(() => {
-    const animation = Animated.loop(
-      Animated.timing(animatedValue, {
-        toValue: -scrollWidth,
-        duration: 10000, // 10 seconds for one complete loop
-        useNativeDriver: true,
-        isInteraction: false
-      })
+  // If 2 or fewer tags, don't show scroller - just display normally
+  if (tags.length <= 2) {
+    return (
+      <View style={styles.simpleTagsContainer}>
+        {tags.map((tag, index) => (
+          <View
+            key={index}
+            style={[styles.tag, { borderColor: colors.border }]}
+          >
+            <Text style={[styles.tagText, { color: colors.textSecondary }]}>
+              {tag}
+            </Text>
+          </View>
+        ))}
+      </View>
     )
-    animation.start()
+  }
 
-    return () => animation.stop()
-  }, [scrollWidth])
-
+  // More than 2 tags - show horizontal scroller
   return (
-    <View style={styles.container}>
-      <Animated.View
-        style={[styles.content, { transform: [{ translateX: animatedValue }] }]}
-      >
-        {/* First set of tags */}
-        {tags.map((tag, idx) => (
-          <View
-            key={`tag-${idx}`}
-            style={[styles.tag, { borderColor: colors.border }]}
-          >
-            <Text style={[styles.tagText, { color: colors.textSecondary }]}>
-              {tag}
-            </Text>
-          </View>
-        ))}
-
-        {/* Duplicate tags for seamless infinite scroll */}
-        {tags.map((tag, idx) => (
-          <View
-            key={`tag-dup-${idx}`}
-            style={[styles.tag, { borderColor: colors.border }]}
-          >
-            <Text style={[styles.tagText, { color: colors.textSecondary }]}>
-              {tag}
-            </Text>
-          </View>
-        ))}
-
-        {/* Triple for extra smooth loop */}
-        {tags.map((tag, idx) => (
-          <View
-            key={`tag-triple-${idx}`}
-            style={[styles.tag, { borderColor: colors.border }]}
-          >
-            <Text style={[styles.tagText, { color: colors.textSecondary }]}>
-              {tag}
-            </Text>
-          </View>
-        ))}
-      </Animated.View>
-    </View>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.tagsContainer}
+      contentContainerStyle={styles.tagsContent}
+    >
+      {tags.map((tag, index) => (
+        <View key={index} style={[styles.tag, { borderColor: colors.border }]}>
+          <Text style={[styles.tagText, { color: colors.textSecondary }]}>
+            {tag}
+          </Text>
+        </View>
+      ))}
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    height: 32, // Fixed height for single line
-    overflow: 'hidden'
-  },
-  content: {
+  simpleTagsContainer: {
     flexDirection: 'row',
-    alignItems: 'center'
+    justifyContent: 'center',
+    marginBottom: 12,
+    gap: 8
+  },
+  tagsContainer: {
+    marginBottom: 12
+  },
+  tagsContent: {
+    paddingHorizontal: 8
   },
   tag: {
     borderWidth: 1,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
-    marginRight: 8,
-    backgroundColor: 'transparent'
+    marginHorizontal: 4
   },
   tagText: {
-    fontSize: 10,
-    fontWeight: '500'
+    fontSize: 12,
+    fontWeight: '400'
   }
 })

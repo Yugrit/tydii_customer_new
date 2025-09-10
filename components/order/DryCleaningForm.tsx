@@ -1,7 +1,14 @@
 // components/order/forms/DrycleaningForm.tsx
+import { ServiceTypeEnum } from '@/enums'
+import {
+  updateSelectedClothes,
+  updateStorePrices
+} from '@/Redux/slices/orderSlice'
+import { RootState } from '@/Redux/Store'
 import ApiService from '@/services/ApiService'
 import React, { useEffect, useState } from 'react'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { useDispatch, useSelector } from 'react-redux'
 
 interface DrycleaningFormProps {
   formData: any
@@ -119,87 +126,188 @@ export default function DrycleaningForm ({
   onFormDataChange,
   onErrorsChange
 }: DrycleaningFormProps) {
+  const dispatch = useDispatch()
+
+  // NEW: Get store flow data from Redux
+  const { isStoreFlow, orderData } = useSelector(
+    (state: RootState) => state.order
+  )
+
   const [clothNames, setClothNames] = useState<string[]>([])
   const [clothCategories, setClothCategories] = useState<string[]>([])
-
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch both dropdown APIs in parallel
+  // Debug selector for verification
+  const storePrices = useSelector(
+    (state: RootState) => state.order.orderData?.storePrices
+  )
+
+  useEffect(() => {
+    console.log(
+      '🔍 Current DRYCLEANING store prices:',
+      storePrices?.[ServiceTypeEnum.DRYCLEANING]
+    )
+  }, [storePrices])
+
+  // UPDATED: Conditional fetch based on store flow
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
         setLoading(true)
         setError(null)
 
-        console.log('🔄 Fetching cloth names and categories...')
-
-        // Fetch both APIs in parallel
-        const [clothNameResponse, clothCategoryResponse] = await Promise.all([
-          ApiService.get({ url: '/customer/core/dropdown/cloth_name' }),
-          ApiService.get({ url: '/customer/core/dropdown/cloth_category' })
-        ])
-
-        console.log('📊 API responses received:', {
-          clothName: clothNameResponse,
-          clothCategory: clothCategoryResponse
-        })
-
-        // Extract cloth names for headers
         let names = []
-        if (
-          clothNameResponse.data &&
-          Array.isArray(clothNameResponse.data.value)
-        ) {
-          names = clothNameResponse.data.value
-        } else {
-          names = [
-            "Men's Dress Shirt",
-            "Women's Blouse",
-            'Pants / Trousers',
-            'Suit Jacket / Blazer',
-            'Casual Dress'
-          ]
-        }
-
-        // Extract cloth categories for buttons
         let categories = []
-        if (
-          clothCategoryResponse.data &&
-          Array.isArray(clothCategoryResponse.data.value)
-        ) {
-          categories = clothCategoryResponse.data.value
+
+        // CONDITIONAL FETCHING: Store flow vs Normal flow
+        if (isStoreFlow && orderData?.selectedStore?.store_id) {
+          // Fetch from store-specific API
+          console.log(
+            '🏪 Fetching store-specific DRYCLEANING services for store:',
+            orderData.selectedStore.store_id
+          )
+
+          const response = await ApiService.get({
+            url: `/customer/services-offered?storeId=${orderData.selectedStore.store_id}&serviceType=DRYCLEANING`
+          })
+
+          console.log('📊 Store DRYCLEANING API response:', response)
+
+          // Parse store-specific data
+          const allDetails: any[] = []
+          if (Array.isArray(response)) {
+            response.forEach((service: any) => {
+              // Extract poundDetails (weight-based items)
+              if (Array.isArray(service.poundDetails)) {
+                const validPoundDetails = service.poundDetails.filter(
+                  (item: any) => item.deleted_at === null
+                )
+                allDetails.push(...validPoundDetails)
+              }
+
+              // Extract unitDetails (unit-based items)
+              if (Array.isArray(service.unitDetails)) {
+                const validUnitDetails = service.unitDetails.filter(
+                  (item: any) => item.deleted_at === null
+                )
+                allDetails.push(...validUnitDetails)
+              }
+            })
+          }
+
+          // Extract cloth names and categories from store data
+          names = allDetails.map(item => item.cloth_name).filter(Boolean)
+          categories = [
+            ...new Set(allDetails.map(item => item.category).filter(Boolean))
+          ]
+
+          // Create prices map from store data
+          const pricesMap = allDetails.reduce((acc, item) => {
+            if (item.cloth_name && item.price !== undefined) {
+              acc[item.cloth_name] = item.price
+            }
+            return acc
+          }, {} as Record<string, number>)
+
+          console.log(
+            '💰 Updating Redux with DRYCLEANING store prices:',
+            pricesMap
+          )
+
+          // Dispatch store prices to Redux
+          dispatch(
+            updateStorePrices({
+              serviceType: ServiceTypeEnum.DRYCLEANING,
+              prices: pricesMap
+            })
+          )
         } else {
-          categories = ['Kids', 'Mens', 'Womens']
+          // Normal flow - fetch from dropdown APIs
+          console.log('🔄 Fetching normal flow cloth names and categories...')
+
+          // Fetch both APIs in parallel
+          const [clothNameResponse, clothCategoryResponse] = await Promise.all([
+            ApiService.get({ url: '/customer/core/dropdown/cloth_name' }),
+            ApiService.get({ url: '/customer/core/dropdown/cloth_category' })
+          ])
+
+          console.log('📊 Normal API responses received:', {
+            clothName: clothNameResponse,
+            clothCategory: clothCategoryResponse
+          })
+
+          // Extract cloth names for headers
+          if (clothNameResponse && Array.isArray(clothNameResponse.value)) {
+            names = clothNameResponse.value
+          }
+
+          // Extract cloth categories for buttons
+          if (
+            clothCategoryResponse &&
+            Array.isArray(clothCategoryResponse.value)
+          ) {
+            categories = clothCategoryResponse.value
+          }
         }
 
         setClothNames(names)
         setClothCategories(categories)
 
-        console.log('✅ Dropdown data loaded:', {
+        console.log('✅ DRYCLEANING dropdown data loaded:', {
           clothNames: names,
-          clothCategories: categories
+          clothCategories: categories,
+          isFromStore: isStoreFlow
         })
       } catch (apiError) {
-        console.error('❌ Failed to fetch dropdown data:', apiError)
+        console.error('❌ Failed to fetch DRYCLEANING data:', apiError)
         setError('Failed to load form options')
 
-        // Set fallback data
-        setClothNames([
-          "Men's Dress Shirt",
-          "Women's Blouse",
-          'Pants / Trousers',
-          'Suit Jacket / Blazer',
-          'Casual Dress'
-        ])
-        setClothCategories(['Kids', 'Mens', 'Womens'])
+        // Do not set fallback data - leave arrays empty
+        setClothNames([])
+        setClothCategories([])
       } finally {
         setLoading(false)
       }
     }
 
     fetchDropdownData()
-  }, [])
+  }, [isStoreFlow, orderData?.selectedStore?.store_id, dispatch])
+
+  // Save to Redux whenever formData changes
+  useEffect(() => {
+    console.log('📊 DrycleaningForm - Current formData:', formData)
+
+    if (Object.keys(formData).length > 0) {
+      // Filter out items that don't have quantity > 0
+      const validDrycleaningData: any = {}
+
+      Object.keys(formData).forEach(clothName => {
+        const clothInfo = formData[clothName]
+        if (clothInfo && clothInfo.quantity > 0) {
+          validDrycleaningData[clothName] = {
+            category: clothInfo.category,
+            quantity: clothInfo.quantity
+          }
+        }
+      })
+
+      // Only dispatch if we have valid drycleaning items
+      if (Object.keys(validDrycleaningData).length > 0) {
+        console.log(
+          '✅ DrycleaningForm - Dispatching valid data to Redux:',
+          validDrycleaningData
+        )
+
+        // Dispatch the clothes data directly to Redux
+        dispatch(updateSelectedClothes(validDrycleaningData))
+      } else {
+        console.log(
+          '⚠️ DrycleaningForm - No valid drycleaning items to dispatch'
+        )
+      }
+    }
+  }, [formData, dispatch])
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -209,7 +317,7 @@ export default function DrycleaningForm ({
       clothName => formData[clothName] && formData[clothName].quantity > 0
     )
 
-    if (!hasItems) {
+    if (!hasItems && clothNames.length > 0) {
       newErrors.clothingItems = 'Please select at least one clothing item'
     }
 
@@ -233,12 +341,18 @@ export default function DrycleaningForm ({
       quantity: 0
     }
 
-    onFormDataChange({
+    const updatedFormData = {
       [clothName]: {
         ...currentItem,
         [field]: value
       }
-    })
+    }
+
+    console.log('🔄 DrycleaningForm - Updating item:', clothName, field, value)
+    console.log('📝 DrycleaningForm - Updated form data:', updatedFormData)
+
+    // Update local form state
+    onFormDataChange(updatedFormData)
   }
 
   const defaultCategory =
@@ -248,20 +362,30 @@ export default function DrycleaningForm ({
   if (loading) {
     return (
       <View style={styles.inputContainer}>
-        <Text style={styles.loadingText}>Loading form options...</Text>
+        <Text style={styles.loadingText}>
+          {isStoreFlow
+            ? 'Loading store services...'
+            : 'Loading form options...'}
+        </Text>
+      </View>
+    )
+  }
+
+  // Show error state or empty state if no data
+  if (error || clothNames.length === 0) {
+    return (
+      <View style={styles.inputContainer}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>
+            {error || 'No drycleaning services available'}
+          </Text>
+        </View>
       </View>
     )
   }
 
   return (
     <View style={styles.inputContainer}>
-      {/* Show error if API calls failed */}
-      {error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      )}
-
       {/* Clothing Items Selection - Using cloth names as headers */}
       <View style={styles.clothingSection}>
         {clothNames.map(clothName => (

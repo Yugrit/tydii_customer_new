@@ -1,4 +1,10 @@
 // components/order/forms/TailoringForm.tsx
+import { ServiceTypeEnum } from '@/enums'
+import {
+  updateSelectedClothes,
+  updateStorePrices
+} from '@/Redux/slices/orderSlice'
+import { RootState } from '@/Redux/Store'
 import ApiService from '@/services/ApiService'
 import React, { useEffect, useState } from 'react'
 import {
@@ -9,6 +15,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native'
+import { useDispatch, useSelector } from 'react-redux'
 
 interface TailoringFormProps {
   formData: any
@@ -171,130 +178,227 @@ export default function TailoringForm ({
   onFormDataChange,
   onErrorsChange
 }: TailoringFormProps) {
+  const dispatch = useDispatch()
+
+  // NEW: Get store flow data from Redux
+  const { isStoreFlow, orderData } = useSelector(
+    (state: RootState) => state.order
+  )
+
   const [clothNames, setClothNames] = useState<string[]>([])
   const [clothCategories, setClothCategories] = useState<string[]>([])
   const [tailoringTypes, setTailoringTypes] = useState<string[]>([])
-
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch all dropdown data in parallel
+  // Debug selector for verification
+  const storePrices = useSelector(
+    (state: RootState) => state.order.orderData?.storePrices
+  )
+
+  useEffect(() => {
+    console.log(
+      '🔍 Current TAILORING store prices:',
+      storePrices?.[ServiceTypeEnum.TAILORING]
+    )
+  }, [storePrices])
+
+  // UPDATED: Conditional fetch based on store flow
   useEffect(() => {
     const fetchAllDropdownData = async () => {
       try {
         setLoading(true)
         setError(null)
 
-        console.log('🔄 Fetching tailoring form data...')
-
-        // Fetch all APIs in parallel
-        const [
-          clothNameResponse,
-          clothCategoryResponse,
-          tailoringTypeResponse
-        ] = await Promise.all([
-          ApiService.get({ url: '/customer/core/dropdown/cloth_name' }),
-          ApiService.get({ url: '/customer/core/dropdown/cloth_category' }),
-          ApiService.get({ url: '/customer/core/dropdown/tailoring_type' })
-        ])
-
-        console.log('📊 All API responses received:', {
-          clothName: clothNameResponse,
-          clothCategory: clothCategoryResponse,
-          tailoringType: tailoringTypeResponse
-        })
-
-        // Extract cloth names for headers
         let names = []
-        if (
-          clothNameResponse.data &&
-          Array.isArray(clothNameResponse.data.value)
-        ) {
-          names = clothNameResponse.data.value
-        } else {
-          names = [
-            "Men's Dress Shirt",
-            "Women's Blouse",
-            'Pants / Trousers',
-            'Suit Jacket / Blazer',
-            'Casual Dress'
-          ]
-        }
-
-        // Extract cloth categories for buttons
         let categories = []
-        if (
-          clothCategoryResponse.data &&
-          Array.isArray(clothCategoryResponse.data.value)
-        ) {
-          categories = clothCategoryResponse.data.value
-        } else {
-          categories = ['Kids', 'Mens', 'Womens']
-        }
-
-        // Extract tailoring types for dropdown
         let tailoringOptions = []
-        if (
-          tailoringTypeResponse.data &&
-          Array.isArray(tailoringTypeResponse.data.value)
-        ) {
-          tailoringOptions = tailoringTypeResponse.data.value
-        } else {
-          tailoringOptions = [
-            'Button Fix',
-            'Bottom Length Crop',
-            'Waist Fix',
-            'Hem Pants',
-            'Take In Waist',
-            'Shorten Sleeves',
-            'Replace Zipper',
-            'Patch or Repair Tears',
-            'Custom Request (Please describe)',
-            'Adjust Jacket Shoulders'
+
+        // CONDITIONAL FETCHING: Store flow vs Normal flow
+        if (isStoreFlow && orderData?.selectedStore?.store_id) {
+          // Fetch from store-specific API
+          console.log(
+            '🏪 Fetching store-specific TAILORING services for store:',
+            orderData.selectedStore.store_id
+          )
+
+          const response = await ApiService.get({
+            url: `/customer/services-offered?storeId=${orderData.selectedStore.store_id}&serviceType=TAILORING`
+          })
+
+          console.log('📊 Store TAILORING API response:', response)
+
+          // Parse store-specific data
+          const allDetails: any[] = []
+          if (Array.isArray(response)) {
+            response.forEach((service: any) => {
+              // Extract poundDetails (weight-based items)
+              if (Array.isArray(service.poundDetails)) {
+                const validPoundDetails = service.poundDetails.filter(
+                  (item: any) => item.deleted_at === null
+                )
+                allDetails.push(...validPoundDetails)
+              }
+
+              // Extract unitDetails (unit-based items)
+              if (Array.isArray(service.unitDetails)) {
+                const validUnitDetails = service.unitDetails.filter(
+                  (item: any) => item.deleted_at === null
+                )
+                allDetails.push(...validUnitDetails)
+              }
+            })
+          }
+
+          // Extract cloth names, categories, and tailoring types from store data
+          names = [
+            ...new Set(allDetails.map(item => item.cloth_name).filter(Boolean))
           ]
+          categories = [
+            ...new Set(allDetails.map(item => item.category).filter(Boolean))
+          ]
+          tailoringOptions = [
+            ...new Set(
+              allDetails.map(item => item.tailoringType?.name).filter(Boolean)
+            )
+          ]
+
+          // Create prices map from store data
+          const itemPricesMap = allDetails.reduce((acc, item) => {
+            if (item.cloth_name && item.price !== undefined) {
+              acc[item.cloth_name] = item.price
+            }
+            return acc
+          }, {} as Record<string, number>)
+
+          // Create tailoring prices map
+          const tailoringPricesMap = allDetails.reduce((acc, item) => {
+            if (
+              item.cloth_name &&
+              item.tailoringType &&
+              item.tailoringType.price !== undefined
+            ) {
+              acc[`${item.cloth_name}_${item.tailoringType.name}`] =
+                item.tailoringType.price
+            }
+            return acc
+          }, {} as Record<string, number>)
+
+          console.log('💰 Updating Redux with TAILORING store prices:', {
+            itemPrices: itemPricesMap,
+            tailoringPrices: tailoringPricesMap
+          })
+
+          // Dispatch store prices to Redux
+          dispatch(
+            updateStorePrices({
+              serviceType: ServiceTypeEnum.TAILORING,
+              prices: itemPricesMap,
+              tailoringPrices: tailoringPricesMap
+            })
+          )
+        } else {
+          // Normal flow - fetch from dropdown APIs
+          console.log('🔄 Fetching normal flow tailoring data...')
+
+          // Fetch all APIs in parallel
+          const [
+            clothNameResponse,
+            clothCategoryResponse,
+            tailoringTypeResponse
+          ] = await Promise.all([
+            ApiService.get({ url: '/customer/core/dropdown/cloth_name' }),
+            ApiService.get({ url: '/customer/core/dropdown/cloth_category' }),
+            ApiService.get({ url: '/customer/core/dropdown/tailoring_type' })
+          ])
+
+          console.log('📊 Normal API responses received:', {
+            clothName: clothNameResponse,
+            clothCategory: clothCategoryResponse,
+            tailoringType: tailoringTypeResponse
+          })
+
+          // Extract cloth names for headers
+          if (clothNameResponse && Array.isArray(clothNameResponse.value)) {
+            names = clothNameResponse.value
+          }
+
+          // Extract cloth categories for buttons
+          if (
+            clothCategoryResponse &&
+            Array.isArray(clothCategoryResponse.value)
+          ) {
+            categories = clothCategoryResponse.value
+          }
+
+          // Extract tailoring types for dropdown
+          if (
+            tailoringTypeResponse &&
+            Array.isArray(tailoringTypeResponse.value)
+          ) {
+            tailoringOptions = tailoringTypeResponse.value
+          }
         }
 
         setClothNames(names)
         setClothCategories(categories)
         setTailoringTypes(tailoringOptions)
 
-        console.log('✅ All tailoring data loaded:', {
+        console.log('✅ TAILORING data loaded:', {
           clothNames: names,
           clothCategories: categories,
-          tailoringTypes: tailoringOptions
+          tailoringTypes: tailoringOptions,
+          isFromStore: isStoreFlow
         })
       } catch (apiError) {
-        console.error('❌ Failed to fetch tailoring data:', apiError)
-        setError('Failed to load form options')
+        console.error('❌ Failed to fetch TAILORING data:', apiError)
+        setError('Failed to load tailoring options')
 
-        // Set fallback data
-        setClothNames([
-          "Men's Dress Shirt",
-          "Women's Blouse",
-          'Pants / Trousers',
-          'Suit Jacket / Blazer',
-          'Casual Dress'
-        ])
-        setClothCategories(['Kids', 'Mens', 'Womens'])
-        setTailoringTypes([
-          'Button Fix',
-          'Bottom Length Crop',
-          'Waist Fix',
-          'Hem Pants',
-          'Take In Waist',
-          'Shorten Sleeves',
-          'Replace Zipper',
-          'Patch or Repair Tears',
-          'Custom Request (Please describe)',
-          'Adjust Jacket Shoulders'
-        ])
+        // Do not set fallback data - leave arrays empty
+        setClothNames([])
+        setClothCategories([])
+        setTailoringTypes([])
       } finally {
         setLoading(false)
       }
     }
 
     fetchAllDropdownData()
-  }, [])
+  }, [isStoreFlow, orderData?.selectedStore?.store_id, dispatch])
+
+  // Save to Redux whenever formData changes
+  useEffect(() => {
+    console.log('📊 TailoringForm - Current formData:', formData)
+
+    if (Object.keys(formData).length > 0) {
+      // Filter out items that don't have tailoringType selected
+      const validTailoringData: any = {}
+
+      Object.keys(formData).forEach(clothName => {
+        const clothInfo = formData[clothName]
+        if (clothInfo && clothInfo.tailoringType) {
+          validTailoringData[clothName] = {
+            category: clothInfo.category,
+            tailoringType: clothInfo.tailoringType,
+            quantity: 1 // For tailoring, quantity is always 1
+          }
+        }
+      })
+
+      // Only dispatch if we have valid tailoring items
+      if (Object.keys(validTailoringData).length > 0) {
+        console.log(
+          '✅ TailoringForm - Dispatching valid data to Redux:',
+          validTailoringData
+        )
+
+        // Dispatch the clothes data directly, not wrapped in another object
+        dispatch(updateSelectedClothes(validTailoringData))
+      } else {
+        console.log('⚠️ TailoringForm - No valid tailoring items to dispatch')
+      }
+    }
+  }, [formData, dispatch])
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -304,7 +408,7 @@ export default function TailoringForm ({
       clothName => formData[clothName] && formData[clothName].tailoringType
     )
 
-    if (!hasItems) {
+    if (!hasItems && clothNames.length > 0) {
       newErrors.tailoringItems =
         'Please select tailoring service for at least one item'
     }
@@ -329,12 +433,18 @@ export default function TailoringForm ({
       tailoringType: ''
     }
 
-    onFormDataChange({
+    const updatedFormData = {
       [clothName]: {
         ...currentItem,
         [field]: value
       }
-    })
+    }
+
+    console.log('🔄 TailoringForm - Updating item:', clothName, field, value)
+    console.log('📝 TailoringForm - Updated form data:', updatedFormData)
+
+    // Update local form state
+    onFormDataChange(updatedFormData)
   }
 
   const defaultCategory =
@@ -344,20 +454,30 @@ export default function TailoringForm ({
   if (loading) {
     return (
       <View style={styles.inputContainer}>
-        <Text style={styles.loadingText}>Loading tailoring options...</Text>
+        <Text style={styles.loadingText}>
+          {isStoreFlow
+            ? 'Loading store services...'
+            : 'Loading tailoring options...'}
+        </Text>
+      </View>
+    )
+  }
+
+  // Show error state or empty state if no data
+  if (error || clothNames.length === 0) {
+    return (
+      <View style={styles.inputContainer}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>
+            {error || 'No tailoring services available'}
+          </Text>
+        </View>
       </View>
     )
   }
 
   return (
     <View style={styles.inputContainer}>
-      {/* Show error if API calls failed */}
-      {error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      )}
-
       {/* Tailoring Items Selection - Using cloth names as headers */}
       <View style={styles.tailoringSection}>
         {clothNames.map(clothName => (

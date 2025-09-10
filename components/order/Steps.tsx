@@ -1,21 +1,36 @@
 // components/StepIndicator.tsx
 import { useThemeColors } from '@/hooks/useThemeColor'
+import { RootState } from '@/Redux/Store'
 import { Check } from 'lucide-react-native'
 import React, { useEffect, useRef } from 'react'
 import { Animated, StyleSheet, Text, View } from 'react-native'
+import { useSelector } from 'react-redux'
 
 interface StepIndicatorProps {
-  currentStep: number
-  totalSteps: number
-  steps: string[]
+  // Remove static props - we'll get them from Redux
 }
 
-export default function StepIndicator ({
-  currentStep,
-  totalSteps,
-  steps
-}: StepIndicatorProps) {
+export default function StepIndicator () {
   const colors = useThemeColors()
+
+  // GET FLOW STATE FROM REDUX
+  const { currentStep, isStoreFlow } = useSelector(
+    (state: RootState) => state.order
+  )
+
+  // DEFINE STEPS BASED ON FLOW TYPE (WITHOUT SERVICE STEP)
+  const storeFlowSteps = ['Pickup', 'Clothes', 'Confirm'] // 3 steps
+  const serviceFlowSteps = ['Pickup', 'Clothes', 'Store', 'Confirm'] // 4 steps
+
+  const steps = isStoreFlow ? storeFlowSteps : serviceFlowSteps
+  const totalSteps = steps.length
+
+  console.log('📊 Step Indicator:', {
+    currentStep,
+    totalSteps,
+    isStoreFlow: isStoreFlow ? 'Store Flow' : 'Service Flow',
+    steps
+  })
 
   // Create animated values for each step and line
   const stepAnimatedValues = useRef(
@@ -52,7 +67,7 @@ export default function StepIndicator ({
         useNativeDriver: false
       }).start()
     })
-  }, [currentStep])
+  }, [currentStep, steps.length])
 
   const renderStep = (step: string, index: number) => {
     const isCompleted = index < currentStep - 1
@@ -60,7 +75,7 @@ export default function StepIndicator ({
     const isInactive = index > currentStep - 1
     const isLastStep = index === steps.length - 1
 
-    // Animated styles for step circle (without scaling)
+    // Animated styles for step circle
     const animatedCircleStyle = {
       backgroundColor: stepAnimatedValues[index].interpolate({
         inputRange: [0, 1],
@@ -81,7 +96,7 @@ export default function StepIndicator ({
 
     const numberTextColor = isInactive ? '#9E9E9E' : '#1876A9'
 
-    // Check if this line should be green (completed)
+    // Check if this line should be completed (green)
     const isLineCompleted = index < currentStep - 1
 
     // Animated line styles
@@ -92,7 +107,7 @@ export default function StepIndicator ({
             outputRange: [
               '#E0E0E0',
               isLineCompleted ? '#4CAF50' : colors.primary
-            ] // Green for completed, primary for active
+            ]
           }),
           width: lineAnimatedValues[index]?.interpolate({
             inputRange: [0, 1],
@@ -102,7 +117,7 @@ export default function StepIndicator ({
       : {}
 
     return (
-      <View key={index} style={styles.stepWrapper}>
+      <View key={`${step}-${index}`} style={styles.stepWrapper}>
         <View style={styles.stepContainer}>
           {/* Animated Step Circle */}
           <Animated.View style={[styles.stepCircle, animatedCircleStyle]}>
@@ -140,6 +155,15 @@ export default function StepIndicator ({
 
   return (
     <View style={styles.container}>
+      {/* Flow Type Indicator */}
+      <View style={styles.flowIndicator}>
+        <Text style={styles.flowText}>
+          {isStoreFlow ? '🏪 Store Flow' : '🔧 Service Flow'} • Step{' '}
+          {currentStep} of {totalSteps}
+        </Text>
+      </View>
+
+      {/* Steps Row */}
       <View style={styles.stepsRow}>{steps.map(renderStep)}</View>
     </View>
   )
@@ -147,7 +171,17 @@ export default function StepIndicator ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 10
+    marginBottom: 20,
+    paddingHorizontal: 16
+  },
+  flowIndicator: {
+    alignItems: 'center',
+    marginBottom: 16
+  },
+  flowText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600'
   },
   stepsRow: {
     flexDirection: 'row',
@@ -171,10 +205,11 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8
+    marginBottom: 8,
+    backgroundColor: 'white'
   },
   stepNumber: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold'
   },
   stepLabel: {

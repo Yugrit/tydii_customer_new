@@ -1,9 +1,14 @@
 // components/order/forms/WashFoldForm.tsx
-import { updateSelectedClothes } from '@/Redux/slices/orderSlice'
+import { ServiceTypeEnum } from '@/enums'
+import {
+  updateSelectedClothes,
+  updateStorePrices
+} from '@/Redux/slices/orderSlice'
+import { RootState } from '@/Redux/Store'
 import ApiService from '@/services/ApiService'
 import React, { useEffect, useState } from 'react'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 
 interface WashFoldFormProps {
   formData: any
@@ -12,7 +17,7 @@ interface WashFoldFormProps {
   onErrorsChange: (errors: Record<string, string>) => void
 }
 
-// Clothing Type Counter Component
+// Clothing Type Counter Component (UNCHANGED)
 const ClothingCounter = ({
   label,
   value,
@@ -76,35 +81,107 @@ export default function WashFoldForm ({
   onErrorsChange
 }: WashFoldFormProps) {
   const dispatch = useDispatch()
+
+  // NEW: Get store flow data from Redux
+  const { isStoreFlow, orderData } = useSelector(
+    (state: RootState) => state.order
+  )
+
   const [clothNames, setClothNames] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch cloth names from API
+  // Helper function to get auth token
+  const getAuthToken = async () => {
+    // Implement your auth token retrieval logic here
+    // This could be from AsyncStorage, MMKV, or another storage solution
+    return 'your-auth-token-here'
+  }
+
+  // UPDATED: Conditional fetch based on store flow
   useEffect(() => {
     const fetchClothNames = async () => {
       try {
         setLoading(true)
         setError(null)
 
-        console.log('🔄 Fetching wash & fold cloth names...')
-
-        const response = await ApiService.get({
-          url: '/customer/core/dropdown/wash_fold'
-        })
-
-        console.log('📊 Wash & fold API response:', response)
-
-        // Extract cloth names from API response structure
-        // Expected: { id: 1, key: "wash_fold", value: ["Comforter / Duvet", "Towel-Only Wash and Fold", ...] }
         let clothTypes = []
 
-        if (response.data && Array.isArray(response.data.value)) {
-          clothTypes = response.data.value
-        } else if (Array.isArray(response.data)) {
-          clothTypes = response.data
-        } else if (response.value && Array.isArray(response.value)) {
-          clothTypes = response.value
+        // CONDITIONAL FETCHING: Store flow vs Normal flow
+        if (isStoreFlow && orderData?.selectedStore?.store_id) {
+          // Fetch from store-specific API
+          console.log(
+            '🏪 Fetching store-specific services for store:',
+            orderData.selectedStore.store_id
+          )
+
+          const response = await ApiService.get({
+            url: `/customer/services-offered?storeId=${orderData.selectedStore.store_id}&serviceType=WASH_N_FOLD`
+          })
+
+          console.log('📊 Store services API response:', response)
+
+          // Parse store-specific data and extract cloth names
+          const allDetails: any[] = []
+
+          if (Array.isArray(response)) {
+            response.forEach((service: any) => {
+              // Extract poundDetails (weight-based items)
+              if (Array.isArray(service.poundDetails)) {
+                const validPoundDetails = service.poundDetails.filter(
+                  (item: any) => item.deleted_at === null
+                )
+                allDetails.push(...validPoundDetails)
+              }
+
+              // Extract unitDetails (unit-based items)
+              if (Array.isArray(service.unitDetails)) {
+                const validUnitDetails = service.unitDetails.filter(
+                  (item: any) => item.deleted_at === null
+                )
+                allDetails.push(...validUnitDetails)
+              }
+            })
+          }
+
+          // Extract cloth names and update prices in Redux
+          clothTypes = allDetails.map(item => item.category)
+
+          // Update Redux with pricing data from store
+          const pricesMap = allDetails.reduce((acc, item) => {
+            acc[item.category] = item.price
+            return acc
+          }, {} as Record<string, number>)
+
+          console.log('ALL DETAILS :::: ', allDetails)
+
+          console.log('PRICEMAP :::: ', pricesMap)
+
+          console.log('💰 Updating Redux with store prices:', pricesMap)
+          dispatch(
+            updateStorePrices({
+              serviceType: ServiceTypeEnum.WASH_N_FOLD,
+              prices: pricesMap
+            })
+          )
+        } else {
+          // Normal flow - fetch from dropdown API
+          console.log('🔄 Fetching normal flow cloth names...')
+
+          const response = await ApiService.get({
+            url: '/customer/core/dropdown/wash_fold'
+          })
+
+          console.log('📊 Normal wash & fold API response:', response)
+
+          // Extract cloth names from API response structure
+          if (response.data && Array.isArray(response.data.value)) {
+            clothTypes = response.data.value
+          } else if (Array.isArray(response.data)) {
+            clothTypes = response.data
+          } else if (response.value && Array.isArray(response.value)) {
+            clothTypes = response.value
+          }
         }
 
         // Fallback cloth types if API fails or returns empty
@@ -127,7 +204,7 @@ export default function WashFoldForm ({
     }
 
     fetchClothNames()
-  }, [])
+  }, [isStoreFlow, orderData?.selectedStore?.store_id, dispatch])
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -158,7 +235,7 @@ export default function WashFoldForm ({
     dispatch(updateSelectedClothes(updatedFormData))
   }
 
-  // Show loading state
+  // Show loading state (UNCHANGED)
   if (loading) {
     return (
       <View style={styles.inputContainer}>
@@ -167,7 +244,7 @@ export default function WashFoldForm ({
     )
   }
 
-  // Show error state
+  // Show error state (UNCHANGED)
   if (error) {
     return (
       <View style={styles.inputContainer}>
@@ -178,6 +255,7 @@ export default function WashFoldForm ({
     )
   }
 
+  // UI COMPLETELY UNCHANGED
   return (
     <View style={styles.inputContainer}>
       {/* Clothing Type Counters */}

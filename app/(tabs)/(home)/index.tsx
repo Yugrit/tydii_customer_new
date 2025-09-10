@@ -10,7 +10,7 @@ import {
   userLoginState
 } from '@/Redux/slices/userSlices'
 import ApiService from '@/services/ApiService'
-import { storeData_MMKV } from '@/services/StorageService'
+import { getData_MMKV, storeData_MMKV } from '@/services/StorageService'
 import { useRouter } from 'expo-router'
 import { jwtDecode } from 'jwt-decode'
 import React, { useEffect, useState } from 'react'
@@ -27,11 +27,11 @@ interface JWTPayload {
 export default function HomePage () {
   const dispatch = useDispatch()
   const router = useRouter()
-  const { token, userData, isApproved } = useSelector(
-    (state: any) => state.user
-  )
+  const { userData, isApproved } = useSelector((state: any) => state.user)
 
   const [loading, setLoading] = useState(false)
+
+  const token = getData_MMKV('user-token')
 
   useEffect(() => {
     async function checkAndFetchUserData () {
@@ -41,6 +41,8 @@ export default function HomePage () {
         router.replace('/auth/login')
         return
       }
+
+      console.log('USER TOKEN :::: ', token)
 
       // If userData is missing or incomplete, fetch it
       if (!userData || !userData.id) {

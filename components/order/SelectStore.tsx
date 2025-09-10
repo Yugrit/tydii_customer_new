@@ -1,5 +1,9 @@
 // components/order/forms/StoreSelectionForm.tsx
-import { updateSelectedStore } from '@/Redux/slices/orderSlice'
+import {
+  updateItemPrices,
+  updatePaymentBreakdown,
+  updateSelectedStore
+} from '@/Redux/slices/orderSlice'
 import { RootState } from '@/Redux/Store'
 import ApiService from '@/services/ApiService'
 import { Store } from '@/types'
@@ -156,10 +160,9 @@ export default function StoreSelectionForm ({
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // FIXED Helper function to format date to yyyy-MM-dd
+  // Helper function to format date to yyyy-MM-dd
   const formatDateToISO = (dateStr: string): string => {
     if (!dateStr) {
-      // Return tomorrow's date if no date provided
       const tomorrow = new Date()
       tomorrow.setDate(tomorrow.getDate() + 1)
       const year = tomorrow.getFullYear()
@@ -206,7 +209,6 @@ export default function StoreSelectionForm ({
     // Validate the date
     if (isNaN(date.getTime())) {
       console.error('❌ Invalid date created from:', dateStr)
-      // Return a valid fallback date
       const tomorrow = new Date()
       tomorrow.setDate(tomorrow.getDate() + 1)
       const year = tomorrow.getFullYear()
@@ -224,13 +226,15 @@ export default function StoreSelectionForm ({
     return formattedDate
   }
 
-  // Build API payload in exact format
+  // Build API payload with proper service-specific item structures
   const buildEstimatePayload = () => {
+    console.log('Order Data Till Now ::: ', orderData)
     const pickupDetails = orderData.pickupDetails
     const selectedClothes = orderData.selectedClothes
 
     console.log('🔍 Debug - pickupDetails:', pickupDetails)
     console.log('🔍 Debug - selectedClothes:', selectedClothes)
+    console.log('🔍 Debug - serviceType:', serviceType)
 
     if (!pickupDetails || !selectedClothes) {
       throw new Error('Missing required order data')
@@ -243,47 +247,59 @@ export default function StoreSelectionForm ({
         pickupDetails.location?.includes(addr.address_type)
     )
 
-    // Build items array with exact format
-    const items: any[] = []
+    // Build structured items based on service type
+    const buildStructuredItems = () => {
+      const items: any[] = []
 
-    // Handle selectedClothes with proper typing
-    if (selectedClothes.items && Array.isArray(selectedClothes.items)) {
-      // For structured selectedClothes with items array
-      selectedClothes.items.forEach((item: any) => {
-        if (item.quantity > 0) {
-          items.push({
-            category: item.item_name || item.category,
-            quantity: item.quantity.toString()
+      if (serviceType === 'TAILORING') {
+        // TAILORING format: { category, cloth_name, quantity, tailoringTypes }
+        if (selectedClothes.items && Array.isArray(selectedClothes.items)) {
+          selectedClothes.items.forEach((item: any) => {
+            if (item.quantity > 0) {
+              items.push({
+                category: item.category || 'Mens',
+                cloth_name: item.item_name || '',
+                quantity: item.quantity,
+                tailoringTypes: item.tailoring_types
+                  ? item.tailoring_types.map((tt: any) => ({ name: tt.name }))
+                  : []
+              })
+            }
           })
         }
-      })
-    } else {
-      // For direct cloth name structure (fallback case)
-      // Create a type-safe way to iterate over the object
-      const clothesData = selectedClothes as any // Type assertion for this specific case
-      Object.keys(clothesData).forEach(clothName => {
-        const clothData = clothesData[clothName]
-        if (typeof clothData === 'number' && clothData > 0) {
-          items.push({
-            category: clothName,
-            quantity: clothData.toString()
-          })
-        } else if (clothData && clothData.quantity > 0) {
-          items.push({
-            category: clothName,
-            quantity: clothData.quantity.toString()
+      } else if (serviceType === 'WASH_N_FOLD') {
+        // WASH_N_FOLD format: { category, quantity }
+        if (selectedClothes.items && Array.isArray(selectedClothes.items)) {
+          selectedClothes.items.forEach((item: any) => {
+            if (item.quantity > 0) {
+              items.push({
+                category: item.item_name || '',
+                quantity: item.quantity
+              })
+            }
           })
         }
-      })
+      } else if (serviceType === 'DRYCLEANING') {
+        // DRYCLEANING format: { category, cloth_name, quantity }
+        if (selectedClothes.items && Array.isArray(selectedClothes.items)) {
+          selectedClothes.items.forEach((item: any) => {
+            if (item.quantity > 0) {
+              items.push({
+                category: item.category || 'Mens',
+                cloth_name: item.item_name || '',
+                quantity: item.quantity
+              })
+            }
+          })
+        }
+      }
+
+      return items
     }
 
-    // Ensure we have at least one item
-    if (items.length === 0) {
-      items.push({
-        category: 'Mix Cloth',
-        quantity: '1'
-      })
-    }
+    const items = buildStructuredItems()
+
+    console.log('🔧 Built structured items for', serviceType, ':', items)
 
     // Build payload with exact structure and formatted dates
     const payload = {
@@ -347,7 +363,7 @@ export default function StoreSelectionForm ({
 
         console.log('📊 Stores API response:', response)
 
-        // FIXED: Handle the correct response structure
+        // Handle the correct response structure
         let storesRaw = []
 
         // The response is directly an array of store objects
@@ -363,8 +379,7 @@ export default function StoreSelectionForm ({
         console.log('🔍 Raw stores data:', storesRaw)
 
         // Extract store data from the nested structure
-        const processedStores = storesRaw.map((item: any, index: number) => {
-          // Each item has: averageRating, isFavourite, matchedItems, originalPrice, pickupDistance, store, totalPrice
+        const processedStores = storesRaw.map((item: any) => {
           const storeData = item.store
 
           return {
@@ -394,7 +409,10 @@ export default function StoreSelectionForm ({
             pickupDistance: item.pickupDistance,
             isFavourite: item.isFavourite,
             matchedItems: item.matchedItems,
-            pricingTierUsed: item.pricingTierUsed
+            pricingTierUsed: item.pricingTierUsed,
+            // Store the full item for price updates
+            totalPrice: item.totalPrice,
+            originalPrice: item.originalPrice
           }
         })
 
@@ -417,6 +435,108 @@ export default function StoreSelectionForm ({
     }
   }, [orderData, serviceType, userData])
 
+  // NEW: Function to update prices from matchedItems
+  const updatePricesFromMatchedItems = (selectedStore: any) => {
+    console.log('🔄 Updating prices from store matchedItems...')
+
+    const matchedItems = selectedStore.matchedItems || []
+    const selectedClothes = orderData.selectedClothes?.items || []
+
+    if (matchedItems.length === 0 || selectedClothes.length === 0) {
+      console.log('⚠️ No matched items or selected clothes to update prices')
+      return
+    }
+
+    console.log('📊 MatchedItems from store:', matchedItems)
+    console.log('📊 SelectedClothes from Redux:', selectedClothes)
+
+    // Create price mapping based on service type
+    const itemPrices: Array<{
+      item_name: string
+      price: number
+      tailoring_type?: string
+      tailoring_price?: number
+    }> = []
+
+    selectedClothes.forEach((selectedItem: any) => {
+      // Find matching price from store's matchedItems
+      const matchedItem = matchedItems.find((matched: any) => {
+        const match = matched.matches
+        console.log('MATCH ::: ', match)
+
+        if (serviceType === 'TAILORING') {
+          // Match by cloth_name, category, and tailoringType
+          return (
+            match.cloth_name === selectedItem.item_name &&
+            match.category === selectedItem.category &&
+            selectedItem.tailoring_types &&
+            selectedItem.tailoring_types.some(
+              (tt: any) => match.tailoringType === tt.name
+            )
+          )
+        } else if (serviceType === 'DRYCLEANING') {
+          // Match by cloth_name and category
+          return (
+            match.cloth_name === selectedItem.item_name &&
+            match.category === selectedItem.category
+          )
+        } else if (serviceType === 'WASH_N_FOLD') {
+          // Match by cloth_name (category field contains the cloth name for wash & fold)
+          return match.category === selectedItem.item_name
+        }
+
+        return false
+      })
+
+      if (matchedItem) {
+        const match = matchedItem.match
+
+        if (serviceType === 'TAILORING') {
+          // For tailoring, store both item price and tailoring service price
+          itemPrices.push({
+            item_name: selectedItem.item_name,
+            price: match.price * selectedItem.quantity,
+            tailoring_type: match.tailoringType,
+            tailoring_price: match.price
+          })
+        } else {
+          // For other services, just store item price
+          itemPrices.push({
+            item_name: selectedItem.item_name,
+            price: match.price * selectedItem.quantity
+          })
+        }
+
+        console.log(`✅ Matched price for ${selectedItem.item_name}:`, {
+          unitPrice: match.price,
+          quantity: selectedItem.quantity,
+          totalPrice: match.price * selectedItem.quantity,
+          category: match.category,
+          tailoringType:
+            serviceType === 'TAILORING' ? match.tailoringType : null
+        })
+      } else {
+        console.log(`❌ No price match found for ${selectedItem.item_name}`)
+
+        // Set fallback price if no match found
+        const fallbackPrice = serviceType === 'WASH_N_FOLD' ? 10 : 15
+        itemPrices.push({
+          item_name: selectedItem.item_name,
+          price: fallbackPrice * selectedItem.quantity
+        })
+      }
+    })
+
+    console.log('🔧 Built itemPrices array:', itemPrices)
+
+    // Dispatch price updates to Redux
+    if (itemPrices.length > 0) {
+      dispatch(updateItemPrices({ itemPrices }))
+      console.log('✅ Dispatched price updates to Redux')
+    }
+  }
+
+  // UPDATED: Handle store selection with price and total updates
   const handleStoreSelect = (storeId: string) => {
     setSelectedStoreId(storeId)
     setErrors({})
@@ -424,6 +544,10 @@ export default function StoreSelectionForm ({
     // Find selected store and save to Redux
     const selectedStore = stores.find(store => store.id.toString() === storeId)
     if (selectedStore) {
+      console.log('🏪 Selected store:', selectedStore.storeName)
+      console.log('💰 Store total price:', selectedStore.totalPrice)
+
+      // Save store to Redux
       dispatch(
         updateSelectedStore({
           store_id: selectedStore.id,
@@ -432,10 +556,31 @@ export default function StoreSelectionForm ({
         })
       )
 
+      // Update individual item prices from matchedItems
+      updatePricesFromMatchedItems(selectedStore)
+
+      // Update payment breakdown with API total amount
+      dispatch(
+        updatePaymentBreakdown({
+          orderAmount:
+            selectedStore.totalPrice || selectedStore.estimatedPrice || 0,
+          // Set other fees to 0 since they're included in totalPrice from API
+          tax: 0,
+          platformFee: 0,
+          deliveryCharge: 0,
+          discount: 0
+        })
+      )
+
+      console.log(
+        '💵 Updated payment breakdown with API total:',
+        selectedStore.totalPrice
+      )
+
       // Auto-advance after selection
       setTimeout(() => {
         onNext()
-      }, 600)
+      }, 800) // Slightly longer to allow price updates
     }
   }
 
@@ -505,7 +650,6 @@ export default function StoreSelectionForm ({
   )
 }
 
-// Styles remain the same...
 const styles = StyleSheet.create({
   container: {
     flex: 1

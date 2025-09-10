@@ -47,4 +47,5 @@ export interface Store {
   campaign: Array<any>
   estimatedPrice?: number
   rating?: number
+  totalPrice: number
 }

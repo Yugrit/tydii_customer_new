@@ -1,16 +1,16 @@
 // components/order/OrderNavigationButtons.tsx
 import { useThemeColors } from '@/hooks/useThemeColor'
+import { RootState } from '@/Redux/Store' // ADD STORE TYPE
 import { ArrowLeft, ArrowRight } from 'lucide-react-native'
 import React, { useMemo } from 'react'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { useSelector } from 'react-redux' // ADD REDUX IMPORT
 
 interface OrderNavigationButtonsProps {
   onPrevious: () => void
   onNext: () => void
   previousLabel?: string
   nextLabel?: string
-  showPrevious?: boolean
-  showNext?: boolean
   disabled?: boolean
 }
 
@@ -19,18 +19,36 @@ export default function OrderNavigationButtons ({
   onNext,
   previousLabel = 'Previous',
   nextLabel = 'Next',
-  showPrevious = true,
-  showNext = true,
   disabled = false
 }: OrderNavigationButtonsProps) {
   const colors = useThemeColors()
 
+  // GET FLOW STATE FROM REDUX
+  const { currentStep, isStoreFlow } = useSelector(
+    (state: RootState) => state.order
+  )
+
   const styles = useMemo(() => createStyles(colors), [colors])
+
+  // CONDITIONAL RENDERING LOGIC BASED ON FLOWS
+  // Store Flow: 4 steps (Service → Pickup → Clothes → Confirm)
+  // Service Flow: 5 steps (Service → Pickup → Clothes → Store → Confirm)
+  const maxSteps = isStoreFlow ? 4 : 5
+  const showPrevious = currentStep > 1
+  const showNext = currentStep < maxSteps
+
+  console.log('📱 Navigation:', {
+    currentStep,
+    maxSteps,
+    isStoreFlow: isStoreFlow ? 'Store Flow' : 'Service Flow',
+    showPrevious,
+    showNext
+  })
 
   return (
     <View style={styles.container}>
-      {/* Previous Button */}
-      {showPrevious && (
+      {/* Previous Button - Show only if not on first step */}
+      {showPrevious ? (
         <TouchableOpacity
           style={[
             styles.button,
@@ -43,11 +61,8 @@ export default function OrderNavigationButtons ({
         >
           <ArrowLeft
             size={20}
-            color={disabled ? '#009FE1' : '#009FE1'}
-            style={{
-              backgroundColor: 'white',
-              borderRadius: '50%'
-            }}
+            color={disabled ? '#ccc' : '#009FE1'}
+            style={styles.iconStyle}
           />
           <Text
             style={[
@@ -59,12 +74,12 @@ export default function OrderNavigationButtons ({
             {previousLabel}
           </Text>
         </TouchableOpacity>
+      ) : (
+        /* Spacer when previous button is hidden */
+        <View style={{ flex: 1 }} />
       )}
 
-      {/* Spacer when previous button is hidden */}
-      {!showPrevious && <View style={{ flex: 1 }} />}
-
-      {/* Next Button */}
+      {/* Next Button - Show only if not on last step */}
       {showNext && (
         <TouchableOpacity
           style={[
@@ -87,11 +102,8 @@ export default function OrderNavigationButtons ({
           </Text>
           <ArrowRight
             size={20}
-            color={disabled ? '#009FE1' : '#009FE1'}
-            style={{
-              backgroundColor: 'white',
-              borderRadius: '50%'
-            }}
+            color={disabled ? '#ccc' : '#009FE1'}
+            style={styles.iconStyle}
           />
         </TouchableOpacity>
       )}
@@ -139,5 +151,10 @@ const createStyles = (colors: any) =>
     },
     disabledButtonText: {
       color: colors.mutedForeground
+    },
+    iconStyle: {
+      backgroundColor: 'white',
+      padding: 10,
+      borderRadius: 50 // Use number instead of '50%' for React Native
     }
   })

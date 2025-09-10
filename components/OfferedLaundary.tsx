@@ -43,6 +43,7 @@ interface JWTPayload {
   deliveryPersonId: null
   iat: number
   exp: number
+  services: any
 }
 
 export default function OfferedLaundry () {
@@ -184,7 +185,8 @@ export default function OfferedLaundry () {
                   30 * 24 * 60 * 60 * 1000
                 : false, // New if created within 30 days
               isFavorite: store.isFavourite,
-              preferred: store.preferred
+              preferred: store.preferred,
+              services: store.services
             }
           }
         )

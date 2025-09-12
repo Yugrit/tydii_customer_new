@@ -266,19 +266,52 @@ export default function StoreCard ({
 
   // Handle service selection
   const handleServiceSelect = (service: any) => {
-    console.log('🔧 Service selected:', service.title, 'for store:', item.title)
+    console.log('🔧 Service selected:', service.title, 'for store:', item)
 
     // Close modal
     setShowServiceModal(false)
 
     // Dispatch startOrderFromStore action with selected service
+    const constructStoreAddress = (storeData: any) => {
+      // Get the first (primary) address from storeAddresses array
+      const storeAddress = storeData.storeAddresses?.[0]
+      console.log(storeData)
+
+      if (!storeAddress) {
+        // Return default empty address if no address found
+        return {
+          address_line: '',
+          city: '',
+          state: '',
+          pincode: '',
+          landmark: '',
+          lat: '0.0',
+          long: '0.0'
+        }
+      }
+
+      // Construct Address object matching your interface
+      return {
+        address_line: `${storeAddress.house_no || ''}${
+          storeAddress.street_address ? ', ' + storeAddress.street_address : ''
+        }`,
+        city: storeAddress.city || '',
+        state: storeAddress.state || '',
+        pincode: storeAddress.zipcode || '',
+        landmark: storeAddress.landmark || '',
+        lat: storeAddress.latlongs?.[0]?.latitude,
+        long: storeAddress.latlongs?.[0]?.longitude
+      }
+    }
+
+    // Updated dispatch call
     dispatch(
       startOrderFromStore({
         serviceType: service.id,
         store: {
-          store_id: item.id || item.storeId,
-          store_name: item.title || item.storeName,
-          store_address: item.address || item.storeAddress || ''
+          store_id: Number(item.id),
+          store_name: item.storeName || item.title,
+          store_address: constructStoreAddress(item) // Pass constructed Address object
         }
       })
     )

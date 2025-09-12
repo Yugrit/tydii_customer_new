@@ -6,6 +6,7 @@ import {
 } from '@/Redux/slices/orderSlice'
 import { RootState } from '@/Redux/Store'
 import ApiService from '@/services/ApiService'
+import { formatDateToISO } from '@/services/DateService'
 import { Store } from '@/types'
 import { Heart, Star, StarHalf } from 'lucide-react-native'
 import React, { useEffect, useState } from 'react'
@@ -160,73 +161,7 @@ export default function StoreSelectionForm ({
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // Helper function to format date to yyyy-MM-dd
-  const formatDateToISO = (dateStr: string): string => {
-    if (!dateStr) {
-      const tomorrow = new Date()
-      tomorrow.setDate(tomorrow.getDate() + 1)
-      const year = tomorrow.getFullYear()
-      const month = String(tomorrow.getMonth() + 1).padStart(2, '0')
-      const day = String(tomorrow.getDate()).padStart(2, '0')
-      return `${year}-${month}-${day}`
-    }
-
-    console.log('🔍 Original date string:', dateStr)
-
-    // If date is already in YYYY-MM-DD format, return as-is
-    if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      console.log('✅ Already in ISO format:', dateStr)
-      return dateStr
-    }
-
-    let date: Date
-
-    // Handle MM/DD/YYYY format (most common from date pickers)
-    if (dateStr.includes('/')) {
-      const parts = dateStr.split('/')
-      if (parts.length === 3) {
-        const [month, day, year] = parts
-        date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
-      } else {
-        throw new Error(`Invalid date format: ${dateStr}`)
-      }
-    }
-    // Handle DD-MM-YYYY format
-    else if (dateStr.includes('-')) {
-      const parts = dateStr.split('-')
-      if (parts.length === 3 && parts[2].length === 4) {
-        const [day, month, year] = parts
-        date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
-      } else {
-        throw new Error(`Invalid date format: ${dateStr}`)
-      }
-    }
-    // Handle other formats
-    else {
-      date = new Date(dateStr)
-    }
-
-    // Validate the date
-    if (isNaN(date.getTime())) {
-      console.error('❌ Invalid date created from:', dateStr)
-      const tomorrow = new Date()
-      tomorrow.setDate(tomorrow.getDate() + 1)
-      const year = tomorrow.getFullYear()
-      const month = String(tomorrow.getMonth() + 1).padStart(2, '0')
-      const day = String(tomorrow.getDate()).padStart(2, '0')
-      return `${year}-${month}-${day}`
-    }
-
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const formattedDate = `${year}-${month}-${day}`
-
-    console.log('✅ Formatted date:', formattedDate)
-    return formattedDate
-  }
-
-  // Build API payload with proper service-specific item structures
+  // UPDATED: Build API payload using pickup address from orderData
   const buildEstimatePayload = () => {
     console.log('Order Data Till Now ::: ', orderData)
     const pickupDetails = orderData.pickupDetails
@@ -240,12 +175,15 @@ export default function StoreSelectionForm ({
       throw new Error('Missing required order data')
     }
 
-    // Find user's selected address
-    const selectedAddress = userData?.addresses?.find(
-      (addr: any) =>
-        pickupDetails.location?.includes(addr.house_no) ||
-        pickupDetails.location?.includes(addr.address_type)
-    )
+    // UPDATED: Get pickup address directly from orderData
+    const pickupAddress = pickupDetails.pickupAddress
+    console.log(pickupAddress)
+
+    if (!pickupAddress) {
+      throw new Error('Pickup address is required')
+    }
+
+    console.log('📍 Using pickup address from orderData:', pickupAddress)
 
     // Build structured items based on service type
     const buildStructuredItems = () => {
@@ -298,10 +236,9 @@ export default function StoreSelectionForm ({
     }
 
     const items = buildStructuredItems()
-
     console.log('🔧 Built structured items for', serviceType, ':', items)
 
-    // Build payload with exact structure and formatted dates
+    // UPDATED: Build payload using pickup address object
     const payload = {
       serviceType: serviceType,
       items: items,
@@ -320,20 +257,17 @@ export default function StoreSelectionForm ({
         close: pickupDetails.deliveryTime?.split('-')[1]?.trim() || '12:00 PM',
         note: ''
       },
+      // UPDATED: Use pickup address object directly from orderData
       pickupAddress: {
-        id: selectedAddress?.id || 80,
-        address_line: selectedAddress?.house_no || '60 Charlesgate\n',
-        city: selectedAddress?.city || 'Boston',
-        state: selectedAddress?.state || 'MA',
-        pincode: selectedAddress?.zipcode || '02215',
-        landmark: selectedAddress?.landmark || '',
+        id: 80, // You may want to add this to your Address interface if needed
+        address_line: pickupAddress.address_line,
+        city: pickupAddress.city,
+        state: pickupAddress.state,
+        pincode: pickupAddress.pincode,
+        landmark: pickupAddress.landmark,
         latlong: {
-          latitude: parseFloat(
-            selectedAddress?.latlongs?.[0]?.latitude || '42.3476181'
-          ),
-          longitude: parseFloat(
-            selectedAddress?.latlongs?.[0]?.longitude || '-71.1002881'
-          )
+          latitude: parseFloat(pickupAddress.lat),
+          longitude: parseFloat(pickupAddress.long)
         }
       }
     }
@@ -427,15 +361,18 @@ export default function StoreSelectionForm ({
       }
     }
 
-    // Only load if we have required data
-    if (orderData.pickupDetails && orderData.selectedClothes) {
+    // UPDATED: Only load if we have required data including pickup address
+    if (orderData.pickupDetails?.pickupAddress && orderData.selectedClothes) {
       loadStores()
     } else {
-      setErrors({ general: 'Please complete previous steps first' })
+      setErrors({
+        general:
+          'Please complete previous steps and select pickup address first'
+      })
     }
   }, [orderData, serviceType, userData])
 
-  // NEW: Function to update prices from matchedItems
+  // Function to update prices from matchedItems
   const updatePricesFromMatchedItems = (selectedStore: any) => {
     console.log('🔄 Updating prices from store matchedItems...')
 
@@ -461,7 +398,7 @@ export default function StoreSelectionForm ({
     selectedClothes.forEach((selectedItem: any) => {
       // Find matching price from store's matchedItems
       const matchedItem = matchedItems.find((matched: any) => {
-        const match = matched.matches
+        const match = matched.matches || matched.match
         console.log('MATCH ::: ', match)
 
         if (serviceType === 'TAILORING') {
@@ -536,7 +473,7 @@ export default function StoreSelectionForm ({
     }
   }
 
-  // UPDATED: Handle store selection with price and total updates
+  // Handle store selection with price and total updates
   const handleStoreSelect = (storeId: string) => {
     setSelectedStoreId(storeId)
     setErrors({})
@@ -547,12 +484,34 @@ export default function StoreSelectionForm ({
       console.log('🏪 Selected store:', selectedStore.storeName)
       console.log('💰 Store total price:', selectedStore.totalPrice)
 
-      // Save store to Redux
+      // UPDATED: Convert store address to Address object format
+      const storeAddress = selectedStore.storeAddresses?.[0]
+      const storeAddressObject = storeAddress
+        ? {
+            address_line: storeAddress.house_no || '',
+            city: storeAddress.city || '',
+            state: storeAddress.state || '',
+            pincode: storeAddress.zipcode || '',
+            landmark: storeAddress.landmark || '',
+            lat: storeAddress.latlongs?.[0]?.latitude?.toString(),
+            long: storeAddress.latlongs?.[0]?.longitude?.toString()
+          }
+        : {
+            address_line: '',
+            city: '',
+            state: '',
+            pincode: '',
+            landmark: '',
+            lat: '0.0',
+            long: '0.0'
+          }
+
+      // Save store to Redux with Address object
       dispatch(
         updateSelectedStore({
           store_id: selectedStore.id,
           store_name: selectedStore.storeName,
-          store_address: selectedStore.storeAddresses?.[0]?.house_no || ''
+          store_address: storeAddressObject // Now using Address object
         })
       )
 

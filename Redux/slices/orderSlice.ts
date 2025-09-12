@@ -1,5 +1,6 @@
-// Redux/slices/orderSlice.ts - COMPLETE UPDATED VERSION WITH PRICE MANAGEMENT
+// Redux/slices/orderSlice.ts - UPDATED WITH ADDRESS OBJECTS
 import { ServiceTypeEnum } from '@/enums'
+import { formatDateToISO } from '@/services/DateService'
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 // Define interfaces for the order structure
@@ -21,16 +22,16 @@ interface TimeSlot {
 
 interface TailoringType {
   name: string
-  price?: number // Made optional
+  price?: number
 }
 
 interface OrderItem {
   quantity: number
-  price?: number // Made optional
+  price?: number
   item_name: string
   item_type: string
   tailoring_types?: TailoringType[]
-  category?: string // Added for better item matching
+  category?: string
 }
 
 interface PaymentBreakdown {
@@ -41,19 +42,17 @@ interface PaymentBreakdown {
   deliveryCharge: number
 }
 
-// NEW: Service-specific price storage
 interface ServicePrices {
   itemPrices: Record<string, number>
   tailoringPrices?: Record<string, number>
 }
 
 interface OrderData {
-  // Step 1: Service Selection (handled by startOrder)
   serviceType?: ServiceTypeEnum
 
-  // Step 2: Pickup Details
+  // UPDATED: Pickup Details with Address Objects
   pickupDetails?: {
-    location: string
+    pickupAddress: Address // Changed from location string to Address object
     collectionDate: string
     collectionTime: string
     deliveryDate: string
@@ -62,24 +61,21 @@ interface OrderData {
     repeatOption: string
   }
 
-  // Step 3: Clothes Selection
   selectedClothes?: {
     items: OrderItem[]
     totalWeight: number
     totalItems: number
   }
 
-  // Step 4: Store Selection
+  // UPDATED: Store with address object
   selectedStore?: {
     store_id: number
     store_name: string
-    store_address: string
+    store_address: Address // Changed from string to Address object
   }
 
-  // Step 5: Payment & Confirmation
   paymentBreakdown?: PaymentBreakdown
 
-  // NEW: Service-specific price storage
   storePrices?: {
     [ServiceTypeEnum.WASH_N_FOLD]?: ServicePrices
     [ServiceTypeEnum.DRYCLEANING]?: ServicePrices
@@ -95,13 +91,12 @@ interface OrderState {
   totalSteps: number
   orderData: OrderData
   isOrderActive: boolean
-  isStoreFlow: boolean // Track order flow type
+  isStoreFlow: boolean
   storeFlowData?: {
-    // Store flow specific data
     selectedStore?: {
       store_id: number
       store_name: string
-      store_address: string
+      store_address: Address // Changed from string to Address object
     }
   }
 }
@@ -125,7 +120,7 @@ const orderSlice = createSlice({
       state.serviceType = action.payload
       state.currentStep = 1
       state.isOrderActive = true
-      state.isStoreFlow = false // Service flow
+      state.isStoreFlow = false
       state.orderData = {
         serviceType: action.payload
       }
@@ -138,28 +133,29 @@ const orderSlice = createSlice({
         store: {
           store_id: number
           store_name: string
-          store_address: string
+          store_address: Address // Updated to Address object
         }
       }>
     ) => {
       state.serviceType = action.payload.serviceType
       state.currentStep = 1
       state.isOrderActive = true
-      state.isStoreFlow = true // Store flow
+      state.isStoreFlow = true
       state.storeFlowData = {
         selectedStore: action.payload.store
       }
       state.orderData = {
         serviceType: action.payload.serviceType,
-        selectedStore: action.payload.store // Pre-populate store
+        selectedStore: action.payload.store
       }
     },
 
-    // Step 2: Add Pickup Details
+    // UPDATED: Step 2: Add Pickup Details with Address Objects
     updatePickupDetails: (
       state,
       action: PayloadAction<{
-        location: string
+        pickupAddress: Address // Changed from location string
+        deliveryAddress?: Address // NEW: Optional delivery address
         collectionDate: string
         collectionTime: string
         deliveryDate?: string
@@ -169,7 +165,8 @@ const orderSlice = createSlice({
       }>
     ) => {
       state.orderData.pickupDetails = {
-        location: action.payload.location,
+        pickupAddress: action.payload.pickupAddress,
+
         collectionDate: action.payload.collectionDate,
         collectionTime: action.payload.collectionTime,
         deliveryDate:
@@ -181,7 +178,14 @@ const orderSlice = createSlice({
       }
     },
 
-    // NEW: Universal price storage for all service types
+    // NEW: Update Pickup Address Separately
+    updatePickupAddress: (state, action: PayloadAction<Address>) => {
+      if (!state.orderData.pickupDetails) {
+        state.orderData.pickupDetails = {} as any
+      } else state.orderData.pickupDetails.pickupAddress = action.payload
+    },
+
+    // Universal price storage for all service types
     updateStorePrices: (
       state,
       action: PayloadAction<{
@@ -190,7 +194,6 @@ const orderSlice = createSlice({
         tailoringPrices?: Record<string, number>
       }>
     ) => {
-      // Initialize prices object if not exists
       if (!state.orderData) {
         state.orderData = {}
       }
@@ -200,7 +203,6 @@ const orderSlice = createSlice({
 
       const { serviceType, prices, tailoringPrices } = action.payload
 
-      // Store prices by service type
       state.orderData.storePrices[
         serviceType as keyof typeof state.orderData.storePrices
       ] = {
@@ -229,7 +231,6 @@ const orderSlice = createSlice({
               updatedItem.price = price
             }
 
-            // Update tailoring prices if applicable
             if (item.tailoring_types && tailoringPrices) {
               updatedItem.tailoring_types = item.tailoring_types.map(tt => {
                 const tailoringPrice =
@@ -255,7 +256,6 @@ const orderSlice = createSlice({
       console.log('🔄 Redux - updateSelectedClothes called with:', clothesData)
       console.log('🔄 Redux - Current serviceType:', state.serviceType)
 
-      // Get service-specific prices
       const servicePrices =
         state.orderData?.storePrices?.[
           state.serviceType as keyof typeof state.orderData.storePrices
@@ -308,7 +308,6 @@ const orderSlice = createSlice({
           }
         })
       } else if (state.serviceType === ServiceTypeEnum.TAILORING) {
-        // ENHANCED: Tailoring with price support
         if (clothesData && typeof clothesData === 'object') {
           Object.keys(clothesData).forEach(clothName => {
             const clothInfo = clothesData[clothName]
@@ -373,16 +372,13 @@ const orderSlice = createSlice({
         totalItems
       }
 
-      // NEW: Auto-calculate and update order amount based on item prices
       const orderAmount = items.reduce((sum, item) => {
         let itemTotal = 0
 
-        // Calculate base item cost
         if (item.price && item.quantity) {
           itemTotal += item.price * item.quantity
         }
 
-        // Add tailoring costs if applicable
         if (item.tailoring_types) {
           item.tailoring_types.forEach(tailoringType => {
             if (tailoringType.price) {
@@ -394,7 +390,6 @@ const orderSlice = createSlice({
         return sum + itemTotal
       }, 0)
 
-      // Initialize payment breakdown if it doesn't exist
       if (!state.orderData.paymentBreakdown) {
         state.orderData.paymentBreakdown = {
           orderAmount: 0,
@@ -405,13 +400,10 @@ const orderSlice = createSlice({
         }
       }
 
-      // Update the order amount
       state.orderData.paymentBreakdown.orderAmount = orderAmount
-
       console.log('💰 Redux - Updated order amount:', orderAmount)
     },
 
-    // ADD: Standalone reducer to recalculate order amount (useful when prices update)
     recalculateOrderAmount: state => {
       if (!state.orderData.selectedClothes?.items) return
 
@@ -419,12 +411,10 @@ const orderSlice = createSlice({
         (sum, item) => {
           let itemTotal = 0
 
-          // Calculate base item cost
           if (item.price && item.quantity) {
             itemTotal += item.price * item.quantity
           }
 
-          // Add tailoring costs if applicable
           if (item.tailoring_types) {
             item.tailoring_types.forEach(tailoringType => {
               if (tailoringType.price) {
@@ -438,7 +428,6 @@ const orderSlice = createSlice({
         0
       )
 
-      // Initialize payment breakdown if it doesn't exist
       if (!state.orderData.paymentBreakdown) {
         state.orderData.paymentBreakdown = {
           orderAmount: 0,
@@ -449,17 +438,14 @@ const orderSlice = createSlice({
         }
       }
 
-      // Update the order amount
       state.orderData.paymentBreakdown.orderAmount = orderAmount
-
       console.log('💰 Redux - Recalculated order amount:', orderAmount)
     },
 
-    // ENHANCED: Service-specific price updates
     updateItemPrices: (
       state,
       action: PayloadAction<{
-        serviceType?: ServiceTypeEnum // Make optional, default to current service
+        serviceType?: ServiceTypeEnum
         itemPrices: Array<{
           item_name: string
           price: number
@@ -479,7 +465,6 @@ const orderSlice = createSlice({
 
       state.orderData.selectedClothes.items =
         state.orderData.selectedClothes.items.map(item => {
-          // Only update items of the matching service type
           if (item.item_type !== serviceType) return item
 
           const priceInfo = itemPrices.find(p => p.item_name === item.item_name)
@@ -500,7 +485,6 @@ const orderSlice = createSlice({
             price: priceInfo.price
           }
 
-          // Update tailoring price if it's a tailoring item
           if (item.tailoring_types && priceInfo.tailoring_price !== undefined) {
             updatedItem.tailoring_types = item.tailoring_types.map(tt => ({
               ...tt,
@@ -514,23 +498,22 @@ const orderSlice = createSlice({
       console.log(`✅ Redux - ${serviceType} item prices updated`)
     },
 
-    // Step 4: Add Selected Store
+    // UPDATED: Step 4: Add Selected Store with Address Object
     updateSelectedStore: (
       state,
       action: PayloadAction<{
         store_id: number
         store_name: string
-        store_address: string
+        store_address: Address // Changed from string to Address object
       }>
     ) => {
       state.orderData.selectedStore = action.payload
     },
 
-    // Accept total amount directly from API
     updatePaymentBreakdown: (
       state,
       action: PayloadAction<{
-        orderAmount: number // Required - comes from API
+        orderAmount: number
         discount?: number
         tax?: number
         platformFee?: number
@@ -538,7 +521,7 @@ const orderSlice = createSlice({
       }>
     ) => {
       const {
-        orderAmount, // This comes from the API (e.g., totalPrice from store response)
+        orderAmount,
         discount = 0,
         tax = 0,
         platformFee = 0,
@@ -559,15 +542,159 @@ const orderSlice = createSlice({
       )
     },
 
+    // UPDATED: Create Order API Payload Generator with Address Objects
+    createOrderPayload: (
+      state,
+      action: PayloadAction<{
+        userId: number
+        finalPaymentBreakdown?: PaymentBreakdown
+        campaignId?: number
+        pricingTierId?: number
+      }>
+    ) => {
+      const { userId, finalPaymentBreakdown, campaignId, pricingTierId } =
+        action.payload
+      const orderData = state.orderData
+
+      const paymentData = finalPaymentBreakdown || orderData.paymentBreakdown
+
+      const parseTimeSlot = (timeString: string) => {
+        const parts = timeString.split('-')
+        return {
+          open: parts[0]?.trim() || '10:00 AM',
+          close: parts[1]?.trim() || '08:00 PM',
+          note: 'Available during business hours'
+        }
+      }
+
+      // REMOVED: parseAddressFromLocation function - now using address objects directly
+      const getDefaultAddress = (): Address => ({
+        address_line: '',
+        city: '',
+        state: '',
+        pincode: '',
+        landmark: '',
+        lat: '0.0',
+        long: '0.0'
+      })
+
+      const generateServiceItems = () => {
+        const items = orderData.selectedClothes?.items || []
+
+        return items.map(item => {
+          if (state.serviceType === ServiceTypeEnum.WASH_N_FOLD) {
+            return {
+              item_type: ServiceTypeEnum.WASH_N_FOLD,
+              quantity: item.quantity,
+              price: item.price || 0,
+              category: item.category || item.item_name
+            }
+          } else if (state.serviceType === ServiceTypeEnum.DRYCLEANING) {
+            return {
+              item_type: ServiceTypeEnum.DRYCLEANING,
+              quantity: item.quantity,
+              price: item.price || 0,
+              item_name: item.item_name,
+              category: item.category || ''
+            }
+          } else if (state.serviceType === ServiceTypeEnum.TAILORING) {
+            return {
+              item_type: ServiceTypeEnum.TAILORING,
+              quantity: item.quantity,
+              price: item.price || 0,
+              item_name: item.item_name,
+              tailoring_types:
+                item.tailoring_types?.map(tt => ({
+                  name: tt.name,
+                  price: tt.price || 0
+                })) || []
+            }
+          }
+
+          return {
+            quantity: item.quantity,
+            price: item.price || 0,
+            item_name: item.item_name,
+            category: item.category || ''
+          }
+        })
+      }
+
+      const createOrderPayload = {
+        user_id: userId,
+        store_id: orderData.selectedStore?.store_id || 0,
+
+        ...(campaignId && { campaign_id: campaignId }),
+        ...(pricingTierId && { pricing_tier_id: pricingTierId }),
+
+        repeat_frequency: orderData.pickupDetails?.repeatOption || 'no-repeat',
+        total_amount: paymentData?.orderAmount || 0,
+        status: 'Pending',
+
+        pickup: {
+          pickup_status: 'Pending',
+          pickup_date: orderData.pickupDetails
+            ? formatDateToISO(orderData.pickupDetails.collectionDate)
+            : '',
+          pickup_time_slot: parseTimeSlot(
+            orderData.pickupDetails?.collectionTime || '10:00 AM-08:00 PM'
+          ),
+          // UPDATED: Use pickup address object directly
+          pickup_address:
+            orderData.pickupDetails?.pickupAddress || getDefaultAddress(),
+          pickup_type: 'Home_Pickup',
+          delivery_date: orderData.pickupDetails
+            ? formatDateToISO(orderData.pickupDetails.deliveryDate)
+            : '',
+          delivery_time_slot: parseTimeSlot(
+            orderData.pickupDetails?.deliveryTime ||
+              orderData.pickupDetails?.collectionTime ||
+              '10:00 AM-08:00 PM'
+          ),
+          // UPDATED: Use delivery address or store address object directly
+          delivery_address: orderData.selectedStore?.store_address
+        },
+
+        description: orderData.pickupDetails?.partnerNote || '',
+
+        services: [
+          {
+            service_type: state.serviceType,
+            estimated_weight_or_qty:
+              state.serviceType === ServiceTypeEnum.WASH_N_FOLD
+                ? orderData.selectedClothes?.totalWeight || 0
+                : orderData.selectedClothes?.totalItems || 0,
+            notes: orderData.pickupDetails?.partnerNote || '',
+            items: generateServiceItems()
+          }
+        ],
+
+        additional_items: [],
+
+        payment_breakdown: {
+          orderAmount: paymentData?.orderAmount || 0,
+          discount: paymentData?.discount || 0,
+          tax: paymentData?.tax || 0,
+          platformFee: paymentData?.platformFee || 0,
+          deliveryCharge: paymentData?.deliveryCharge || 0
+        }
+      }
+
+      state.orderData.createOrderPayload = createOrderPayload
+
+      console.log(
+        `📦 Redux - Created ${state.serviceType} order payload:`,
+        JSON.stringify(createOrderPayload)
+      )
+    },
+
     // Navigation actions
     setCurrentStep: (state, action: PayloadAction<number>) => {
       state.currentStep = action.payload
     },
 
     nextStep: state => {
-      // For store flow, skip store selection step (step 3)
       if (state.isStoreFlow && state.currentStep === 2) {
-        // Skip from step 2 (clothes) directly to step 4 (confirm)
         state.currentStep = 4
       } else if (state.currentStep < state.totalSteps) {
         state.currentStep += 1
@@ -575,85 +702,19 @@ const orderSlice = createSlice({
     },
 
     prevStep: state => {
-      // For store flow, skip store selection step (step 3) when going back
       if (state.isStoreFlow && state.currentStep === 4) {
-        // Skip from step 4 (confirm) directly to step 2 (clothes)
         state.currentStep = 2
       } else if (state.currentStep > 1) {
         state.currentStep -= 1
       }
     },
 
-    // Generic update for any additional data
     updateOrderData: (
       state,
       action: PayloadAction<{ step: string; data: any }>
     ) => {
       const { step, data } = action.payload
       state.orderData[step] = data
-    },
-
-    // Generate final API payload
-    generateAPIPayload: (state, action: PayloadAction<{ userId: number }>) => {
-      const { userId } = action.payload
-      const orderData = state.orderData
-
-      // Use nullish coalescing operator (??) to provide fallback values
-      const pickupDate = orderData.pickupDetails?.collectionDate ?? ''
-      const pickupTime =
-        orderData.pickupDetails?.collectionTime ?? '10:00 AM-08:00 PM'
-      const deliveryDate = orderData.pickupDetails?.deliveryDate ?? pickupDate
-      const deliveryTime = orderData.pickupDetails?.deliveryTime ?? pickupTime
-      const partnerNote = orderData.pickupDetails?.partnerNote ?? ''
-      const repeatOption = orderData.pickupDetails?.repeatOption ?? 'no-repeat'
-      const location = orderData.pickupDetails?.location ?? ''
-
-      const apiPayload = {
-        user_id: userId,
-        store_id: orderData.selectedStore?.store_id ?? 0,
-        repeat_frequency: repeatOption,
-        total_amount: getTotalAmountFromAPI(orderData),
-        status: 'Pending',
-        pickup: {
-          pickup_date: pickupDate,
-          pickup_time_slot: {
-            open: pickupTime.split('-')[0] || '10:00 AM',
-            close: pickupTime.split('-')[1] || '08:00 PM',
-            note: 'Available during business hours'
-          },
-          pickup_address: parseAddress(location),
-          pickup_type: 'Home_Pickup',
-          delivery_date: deliveryDate,
-          delivery_time_slot: {
-            open: deliveryTime.split('-')[0] || '10:00 AM',
-            close: deliveryTime.split('-')[1] || '08:00 PM',
-            note: 'Available during business hours'
-          },
-          delivery_address: parseAddress(location),
-          pickup_status: 'Scheduled'
-        },
-        description: partnerNote,
-        services: [
-          {
-            service_type: state.serviceType,
-            estimated_weight_or_qty:
-              orderData.selectedClothes?.totalWeight ??
-              orderData.selectedClothes?.totalItems ??
-              1,
-            notes: partnerNote,
-            items: orderData.selectedClothes?.items ?? []
-          }
-        ],
-        payment_breakdown: orderData.paymentBreakdown ?? {
-          orderAmount: 0,
-          discount: 0,
-          tax: 0,
-          platformFee: 0,
-          deliveryCharge: 0
-        }
-      }
-
-      state.orderData.apiPayload = apiPayload
     },
 
     resetOrder: state => {
@@ -671,52 +732,23 @@ const orderSlice = createSlice({
   }
 })
 
-// Use API total instead of calculating
-function getTotalAmountFromAPI (orderData: OrderData): number {
-  // Return the total from payment breakdown (which comes from API)
-  const payment = orderData.paymentBreakdown
-  if (payment) {
-    const total =
-      payment.orderAmount +
-      payment.tax +
-      payment.platformFee +
-      payment.deliveryCharge -
-      payment.discount
-    console.log('💵 Using API total amount:', total)
-    return total
-  }
-
-  console.log('⚠️ No payment breakdown available')
-  return 0
-}
-
-function parseAddress (location: string): Address {
-  // Simple address parsing - in real app, you'd get this from user's saved addresses
-  return {
-    address_line: location || '',
-    city: 'City',
-    state: 'State',
-    pincode: '123456',
-    landmark: '',
-    lat: '0.0',
-    long: '0.0'
-  }
-}
-
 export const {
   startOrder,
   startOrderFromStore,
   updatePickupDetails,
+  updatePickupAddress, // NEW: Separate address updates
+
   updateSelectedClothes,
   updateSelectedStore,
   updateItemPrices,
   updatePaymentBreakdown,
-  updateStorePrices, // NEW: Universal price storage
+  updateStorePrices,
+  recalculateOrderAmount,
+  createOrderPayload,
   setCurrentStep,
   nextStep,
   prevStep,
   updateOrderData,
-  generateAPIPayload,
   resetOrder,
   completeOrder
 } = orderSlice.actions

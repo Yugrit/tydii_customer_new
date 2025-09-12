@@ -1,6 +1,7 @@
 // components/order/forms/ConfirmOrderForm.tsx
 import { ServiceTypeEnum } from '@/enums'
 import { useThemeColors } from '@/hooks/useThemeColor'
+import { createOrderPayload, updateOrderData } from '@/Redux/slices/orderSlice'
 import { RootState } from '@/Redux/Store'
 import ApiService from '@/services/ApiService'
 import { router } from 'expo-router'
@@ -9,6 +10,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import {
   FlatList,
   Image,
+  Linking, // NEW: Added for opening external URLs
   Modal,
   ScrollView,
   StyleSheet,
@@ -17,7 +19,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 
 interface ConfirmOrderFormProps {
   serviceType: ServiceTypeEnum
@@ -304,6 +306,7 @@ export default function ConfirmOrderForm ({
   const { orderData } = useSelector((state: RootState) => state.order)
   const { userData } = useSelector((state: any) => state.user)
   const colors = useThemeColors()
+  const dispatch = useDispatch()
 
   console.log(orderData)
 
@@ -317,7 +320,6 @@ export default function ConfirmOrderForm ({
   const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null)
   const [showCouponModal, setShowCouponModal] = useState(false)
   const [loadingCoupons, setLoadingCoupons] = useState(false)
-  const [appliedCouponCode, setAppliedCouponCode] = useState<string>('')
 
   // Payment breakdown from backend API
   const [paymentBreakdown, setPaymentBreakdown] =
@@ -399,15 +401,7 @@ export default function ConfirmOrderForm ({
 
     const maxSteps = isStoreFlow ? 4 : 5
     const showPrevious = currentStep > 1
-    const showNext = currentStep < maxSteps
-
-    console.log('📱 ConfirmOrder Navigation:', {
-      currentStep,
-      maxSteps,
-      isStoreFlow: isStoreFlow ? 'Store Flow' : 'Service Flow',
-      showPrevious,
-      showNext
-    })
+    const showNext = true
 
     return (
       <View style={navigationStyles.container}>
@@ -475,6 +469,50 @@ export default function ConfirmOrderForm ({
     )
   }
 
+  // Handle checkout with orderData logging and payload dispatch
+  const handleCheckoutClick = () => {
+    console.log('📦 Order Data on Checkout:', {
+      orderData,
+      serviceType,
+      totalAmount: orderTotal,
+      paymentBreakdown,
+      appliedCoupon,
+      timestamp: new Date().toISOString()
+    })
+
+    // Dispatch createOrderPayload action
+    dispatch(
+      createOrderPayload({
+        userId: userData.id,
+        finalPaymentBreakdown: paymentBreakdown ?? undefined,
+        ...(appliedCoupon &&
+          appliedCoupon.id !== 'custom' && {
+            campaignId: parseInt(appliedCoupon.id)
+          })
+      })
+    )
+
+    console.log('🚀 createOrderPayload action dispatched')
+
+    setShowPaymentModal(true)
+  }
+
+  // Handle back navigation with payload clearing
+  const handleBackNavigation = () => {
+    console.log('🔙 Clearing created order payload on back navigation')
+
+    // Clear the createOrderPayload from Redux
+    dispatch(
+      updateOrderData({
+        step: 'createOrderPayload',
+        data: undefined
+      })
+    )
+
+    // Call the original onPrev function
+    onPrev()
+  }
+
   // Fetch applicable coupons from API
   const fetchApplicableCoupons = async () => {
     if (!orderData.selectedStore || !userData || orderTotal <= 0) {
@@ -527,7 +565,7 @@ export default function ConfirmOrderForm ({
 
       let url = `/customer/orders/calculate-breakdown?orderAmount=${orderAmount}`
       if (couponCode) {
-        url += `&campaignCode=${couponCode}` // Changed from couponCode to campaignCode
+        url += `&campaignCode=${couponCode}`
       }
 
       const response = await ApiService.get({ url })
@@ -611,15 +649,55 @@ export default function ConfirmOrderForm ({
     fetchApplicableCoupons()
   }
 
-  const handleCheckoutClick = () => {
-    setShowPaymentModal(true)
-  }
+  // UPDATED: Handle payment confirmation with order creation API
+  const handlePaymentConfirm = async () => {
+    try {
+      setIsProcessing(true)
+      setShowPaymentModal(false)
 
-  const handlePaymentConfirm = () => {
-    setIsProcessing(true)
-    setShowPaymentModal(false)
-    router.dismissAll()
-    router.replace('./orderconfirmed')
+      console.log('💳 Creating order with API...')
+
+      // Get the created order payload from Redux
+      const createOrderPayloadData = orderData.createOrderPayload
+
+      if (!createOrderPayloadData) {
+        console.error('❌ No order payload found in Redux')
+        setIsProcessing(false)
+        return
+      }
+
+      console.log('📤 Sending order payload:', createOrderPayloadData)
+
+      // Call the order creation API
+      const response = await ApiService.post({
+        url: '/customer/orders/create',
+        data: createOrderPayloadData
+      })
+
+      console.log('✅ Order created successfully:', response)
+
+      // Extract checkout URL from response
+      const checkoutUrl = response?.checkout_url
+
+      if (checkoutUrl) {
+        console.log('🌐 Opening checkout URL in browser:', checkoutUrl)
+
+        // Open checkout URL in external browser
+        await Linking.openURL(checkoutUrl)
+
+        // Navigate to order confirmed page in the app
+        router.dismissAll()
+        router.replace('./orderconfirmed')
+      } else {
+        console.error('❌ No checkout URL received from API')
+        // Handle error - show message to user
+        setIsProcessing(false)
+      }
+    } catch (error) {
+      console.error('❌ Order creation failed:', error)
+      setIsProcessing(false)
+      // Handle error - show message to user
+    }
   }
 
   const handlePaymentCancel = () => {
@@ -825,9 +903,9 @@ export default function ConfirmOrderForm ({
             </Text>
           </View>
 
-          {/* OrderNavigationButtons with exact same UI */}
+          {/* OrderNavigationButtons with logging and payload clearing */}
           <OrderNavigationButtons
-            onPrevious={onPrev}
+            onPrevious={handleBackNavigation}
             onNext={handleCheckoutClick}
             disabled={isProcessing || loadingBreakdown}
             previousLabel='Previous'

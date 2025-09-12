@@ -29,6 +29,7 @@ interface OfferedStore {
   isNew: boolean
   isFavorite: boolean
   preferred: boolean
+  storeAddresses: any[]
 }
 
 interface JWTPayload {
@@ -186,7 +187,8 @@ export default function OfferedLaundry () {
                 : false, // New if created within 30 days
               isFavorite: store.isFavourite,
               preferred: store.preferred,
-              services: store.services
+              services: store.services,
+              storeAddresses: store.storeAddresses
             }
           }
         )

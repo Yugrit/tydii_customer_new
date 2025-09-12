@@ -13,6 +13,17 @@ import { useDispatch, useSelector } from 'react-redux'
 import CustomInput from './CustomInput'
 import OrderNavigationButtons from './OrderNavigationButtons'
 
+// NEW: Address interface
+interface Address {
+  address_line: string
+  city: string
+  state: string
+  pincode: string
+  landmark: string
+  lat: string
+  long: string
+}
+
 interface PickupDetailsFormProps {
   onNext: () => void
   onPrev: () => void
@@ -27,8 +38,12 @@ export default function PickupDetailsForm ({
   // Get user addresses from Redux
   const { userData } = useSelector((state: any) => state.user)
 
+  // UPDATED: State now uses Address objects
   const [formData, setFormData] = useState({
-    location: '',
+    selectedPickupAddress: null as Address | null,
+    selectedDeliveryAddress: null as Address | null,
+    pickupLocationLabel: '', // For display purposes
+    deliveryLocationLabel: '', // For display purposes
     collectionDate: '',
     collectionTime: '',
     deliveryDate: '',
@@ -54,12 +69,25 @@ export default function PickupDetailsForm ({
           const cityState = `${address.city}, ${address.state} ${address.zipcode}`
           const displayAddress = `${address.address_type} - ${addressLine}, ${cityState}`
 
+          // Convert user address to our Address interface format
+          const addressObject: Address = {
+            address_line: `${address.house_no}${
+              address.street_address ? ', ' + address.street_address : ''
+            }`,
+            city: address.city,
+            state: address.state,
+            pincode: address.zipcode,
+            landmark: address.landmark || '',
+            lat: address.latlongs.latitude,
+            long: address.latlongs.longitude
+          }
+
           locations.push({
             id: address.id,
             label: displayAddress,
             value: displayAddress,
             isPrimary: address.is_primary,
-            address: address
+            addressObject: addressObject // NEW: Store the full address object
           })
         })
     }
@@ -72,7 +100,15 @@ export default function PickupDetailsForm ({
     })
 
     // Add "Add New Address" option
-    return locations.map((loc: any) => loc.label)
+    locations.push({
+      id: 'add-new',
+      label: '+ Add New Address',
+      value: '+ Add New Address',
+      isPrimary: false,
+      addressObject: null
+    })
+
+    return locations
   }, [userData?.addresses])
 
   // Get available time slots
@@ -94,8 +130,8 @@ export default function PickupDetailsForm ({
   const validateForm = (): Record<string, string> => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.location.trim()) {
-      newErrors.location = 'Pickup location is required'
+    if (!formData.selectedPickupAddress) {
+      newErrors.pickupLocation = 'Pickup location is required'
     }
 
     if (!formData.collectionDate.trim()) {
@@ -118,16 +154,64 @@ export default function PickupDetailsForm ({
     return newErrors
   }
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-
+  // UPDATED: Handle address selection
+  const handleAddressSelection = (
+    field: 'pickup' | 'delivery',
+    selectedLabel: string
+  ) => {
     // Handle add new address selection
-    if (field === 'location' && value === '+ Add New Address') {
+    if (selectedLabel === '+ Add New Address') {
       console.log('Navigate to add new address screen')
       // You can navigate to add address screen here
       // router.push('/add-address')
       return
     }
+
+    // Find the selected address object
+    const selectedLocation = locationData.find(
+      (loc: any) => loc.label === selectedLabel
+    )
+
+    if (selectedLocation && selectedLocation.addressObject) {
+      if (field === 'pickup') {
+        setFormData(prev => ({
+          ...prev,
+          selectedPickupAddress: selectedLocation.addressObject,
+          pickupLocationLabel: selectedLabel
+        }))
+      } else if (field === 'delivery') {
+        setFormData(prev => ({
+          ...prev,
+          selectedDeliveryAddress: selectedLocation.addressObject,
+          deliveryLocationLabel: selectedLabel
+        }))
+      }
+
+      // Clear error when address is selected
+      if (errors.pickupLocation && field === 'pickup') {
+        setErrors(prev => {
+          const newErrors = { ...prev }
+          delete newErrors.pickupLocation
+          return newErrors
+        })
+      }
+    }
+  }
+
+  const handleInputChange = (field: string, value: string) => {
+    // Handle address selections
+    if (field === 'pickupLocation') {
+      handleAddressSelection('pickup', value)
+      return
+    }
+
+    if (field === 'deliveryLocation') {
+      handleAddressSelection('delivery', value)
+      return
+    }
+
+    // Handle other form fields
+    setFormData(prev => ({ ...prev, [field]: value }))
 
     // Clear related time slots when date changes
     if (field === 'collectionDate') {
@@ -148,19 +232,20 @@ export default function PickupDetailsForm ({
   }
 
   const handleNext = () => {
-    // const validationErrors = validateForm()
+    const validationErrors = validateForm()
 
-    // if (Object.keys(validationErrors).length > 0) {
-    //   setErrors(validationErrors)
-    //   const errorMessages = Object.values(validationErrors).join('\n')
-    //   console.log('Validation errors:', errorMessages)
-    //   return
-    // }
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors)
+      const errorMessages = Object.values(validationErrors).join('\n')
+      console.log('Validation errors:', errorMessages)
+      return
+    }
 
-    // Save form data to Redux
+    // UPDATED: Save form data with Address objects to Redux
     dispatch(
       updatePickupDetails({
-        location: formData.location,
+        pickupAddress: formData.selectedPickupAddress!, // Required address object
+
         collectionDate: formData.collectionDate,
         collectionTime: formData.collectionTime,
         deliveryDate: formData.deliveryDate,
@@ -169,6 +254,17 @@ export default function PickupDetailsForm ({
         repeatOption: formData.repeatOption
       })
     )
+
+    console.log('📍 Pickup Details Saved:', {
+      pickupAddress: formData.selectedPickupAddress,
+      deliveryAddress: formData.selectedDeliveryAddress,
+      collectionDate: formData.collectionDate,
+      collectionTime: formData.collectionTime,
+      deliveryDate: formData.deliveryDate,
+      deliveryTime: formData.deliveryTime,
+      partnerNote: formData.partnerNote,
+      repeatOption: formData.repeatOption
+    })
 
     onNext()
   }
@@ -187,15 +283,16 @@ export default function PickupDetailsForm ({
           <View style={styles.divider} />
 
           <View style={styles.inputContainer}>
+            {/* UPDATED: Pickup Address Selection */}
             <CustomInput
               label='Pickup Location'
-              placeholder='Select your address'
+              placeholder='Select your pickup address'
               type='location'
               required
-              dropdownData={locationData}
-              value={formData.location}
-              onChangeText={text => handleInputChange('location', text)}
-              error={errors.location}
+              dropdownData={locationData.map((loc: any) => loc.label)}
+              value={formData.pickupLocationLabel}
+              onChangeText={text => handleInputChange('pickupLocation', text)}
+              error={errors.pickupLocation}
             />
 
             <CustomInput

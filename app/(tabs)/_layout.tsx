@@ -1,7 +1,7 @@
 // app/(tabs)/_layout.tsx
 import Header from '@/components/Header'
 import { Tabs } from 'expo-router'
-import { Home, Settings, ShoppingBag, User } from 'lucide-react-native'
+import { Heart, Home, Settings, ShoppingBag, User } from 'lucide-react-native'
 import React from 'react'
 
 export default function TabsLayout () {
@@ -20,9 +20,11 @@ export default function TabsLayout () {
               return <Home color={color} size={size || 24} />
             case '(home)': // If you're using (home) folder
               return <Home color={color} size={size || 24} />
-            case 'profile':
+            case 'favourite': // If you're using (home) folder
+              return <Heart color={color} size={size || 24} />
+            case '(profile)':
               return <User color={color} size={size || 24} />
-            case 'settings':
+            case '(setting)':
               return <Settings color={color} size={size || 24} />
             case '(order)': // Add the order case
               return <ShoppingBag color={color} size={size || 24} />
@@ -44,6 +46,20 @@ export default function TabsLayout () {
         options={{
           tabBarLabel: 'Order',
           title: 'Order'
+        }}
+      />
+      <Tabs.Screen
+        name='favourite'
+        options={{
+          tabBarLabel: 'Favourite',
+          title: 'Favourite'
+        }}
+      />
+      <Tabs.Screen
+        name='(setting)'
+        options={{
+          tabBarLabel: 'Settings',
+          title: 'Settings'
         }}
       />
     </Tabs>

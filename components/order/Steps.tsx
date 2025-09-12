@@ -135,9 +135,6 @@ export default function StepIndicator () {
               </Text>
             )}
           </Animated.View>
-
-          {/* Step Label */}
-          <Text style={[styles.stepLabel, { color: textColor }]}>{step}</Text>
         </View>
 
         {/* Animated Connecting Line */}

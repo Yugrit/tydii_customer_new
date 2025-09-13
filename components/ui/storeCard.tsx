@@ -4,7 +4,14 @@ import { ServiceTypeEnum } from '@/enums'
 import { useThemeColors } from '@/hooks/useThemeColor'
 import { useNavigation } from '@react-navigation/native'
 import { router } from 'expo-router'
-import { ArrowRight, BadgeCheck, Heart, Star, StarHalf } from 'lucide-react-native'
+import {
+  ArrowRight,
+  BadgeCheck,
+  Heart,
+  Star,
+  StarHalf,
+  X
+} from 'lucide-react-native'
 import React, { useMemo, useState } from 'react'
 import {
   FlatList,
@@ -29,54 +36,48 @@ interface StoreCardProps {
 const ServiceCard = ({
   item,
   onPress,
-  disabled = false
+  disabled = false,
+  colors
 }: {
   item: any
   onPress: (service: any) => void
   disabled?: boolean
+  colors: any
 }) => {
-  const colors = useThemeColors()
+  const styles = createServiceCardStyles(colors)
 
   return (
     <TouchableOpacity
-      style={[
-        serviceCardStyles.card,
-        disabled && serviceCardStyles.disabledCard
-      ]}
+      style={[styles.card, disabled && styles.disabledCard]}
       onPress={() => onPress(item)}
       disabled={disabled}
       activeOpacity={0.7}
     >
       <View
         style={[
-          serviceCardStyles.imageContainer,
-          { backgroundColor: item.color || '#C5ECFC' }
+          styles.imageContainer,
+          { backgroundColor: item.color || colors.light }
         ]}
       >
         <Image
           source={item.image}
-          style={serviceCardStyles.serviceImage}
+          style={styles.serviceImage}
           resizeMode='contain'
         />
       </View>
 
-      <View style={serviceCardStyles.cardContent}>
-        <Text
-          style={[serviceCardStyles.serviceTitle, { color: colors.primary }]}
-        >
+      <View style={styles.cardContent}>
+        <Text style={[styles.serviceTitle, { color: colors.text }]}>
           {item.title}
         </Text>
         <Text
-          style={[
-            serviceCardStyles.serviceDescription,
-            { color: colors.textSecondary }
-          ]}
+          style={[styles.serviceDescription, { color: colors.textSecondary }]}
         >
           {item.serviceType}
         </Text>
       </View>
 
-      <View style={serviceCardStyles.arrowContainer}>
+      <View style={styles.arrowContainer}>
         <ArrowRight size={16} color={colors.primary} strokeWidth={2} />
       </View>
     </TouchableOpacity>
@@ -89,16 +90,20 @@ const ServiceSelectionModal = ({
   services,
   storeName,
   onServiceSelect,
-  onCancel
+  onCancel,
+  colors
 }: {
   visible: boolean
   services: any[]
   storeName: string
   onServiceSelect: (service: any) => void
   onCancel: () => void
+  colors: any
 }) => {
+  const styles = createModalStyles(colors)
+
   const renderServiceItem = ({ item }: { item: any }) => (
-    <ServiceCard item={item} onPress={onServiceSelect} />
+    <ServiceCard item={item} onPress={onServiceSelect} colors={colors} />
   )
 
   return (
@@ -108,29 +113,37 @@ const ServiceSelectionModal = ({
       animationType='slide'
       onRequestClose={onCancel}
     >
-      <View style={modalStyles.modalOverlay}>
-        <View style={modalStyles.modalContent}>
+      <View style={styles.modalOverlay}>
+        <View
+          style={[styles.modalContent, { backgroundColor: colors.background }]}
+        >
           {/* Header */}
-          <View style={modalStyles.modalHeader}>
-            <Text style={modalStyles.modalTitle}>Select Service</Text>
+          <View style={styles.modalHeader}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              Select Service
+            </Text>
             <TouchableOpacity
               onPress={onCancel}
-              style={modalStyles.closeButton}
+              style={[styles.closeButton, { backgroundColor: colors.surface }]}
             >
-              <Text style={modalStyles.closeButtonText}>✕</Text>
+              <X size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
           {/* Store Name */}
-          <Text style={modalStyles.storeNameText}>
+          <Text style={[styles.storeNameText, { color: colors.textSecondary }]}>
             Services available at{' '}
-            <Text style={modalStyles.storeName}>{storeName}</Text>
+            <Text style={[styles.storeName, { color: colors.primary }]}>
+              {storeName}
+            </Text>
           </Text>
 
           {/* Services List */}
           {services.length === 0 ? (
-            <View style={modalStyles.noServicesContainer}>
-              <Text style={modalStyles.noServicesText}>
+            <View style={styles.noServicesContainer}>
+              <Text
+                style={[styles.noServicesText, { color: colors.textSecondary }]}
+              >
                 No services available at this store
               </Text>
             </View>
@@ -139,15 +152,28 @@ const ServiceSelectionModal = ({
               data={services}
               renderItem={renderServiceItem}
               keyExtractor={item => item.id}
-              style={modalStyles.servicesList}
+              style={styles.servicesList}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={modalStyles.servicesContainer}
+              contentContainerStyle={styles.servicesContainer}
             />
           )}
 
           {/* Cancel Button */}
-          <TouchableOpacity style={modalStyles.cancelButton} onPress={onCancel}>
-            <Text style={modalStyles.cancelButtonText}>Cancel</Text>
+          <TouchableOpacity
+            style={[
+              styles.cancelButton,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border
+              }
+            ]}
+            onPress={onCancel}
+          >
+            <Text
+              style={[styles.cancelButtonText, { color: colors.textSecondary }]}
+            >
+              Cancel
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -180,29 +206,29 @@ export default function StoreCard ({
       title: 'Wash & Fold',
       serviceType: 'Professional washing and folding service',
       image: require('../../assets/images/wash.png'),
-      color: '#E3F2FD'
+      color: colors.light
     },
     {
       id: ServiceTypeEnum.DRYCLEANING,
       title: 'Dry Clean',
       serviceType: 'Premium dry cleaning service',
       image: require('../../assets/images/dryclean.png'),
-      color: '#F3E5F5'
+      color: colors.light
     },
     {
       id: ServiceTypeEnum.TAILORING,
       title: 'Tailoring',
       serviceType: 'Expert tailoring and alterations',
       image: require('../../assets/images/tailor.png'),
-      color: '#E8F5E8'
+      color: colors.light
     }
   ]
 
-  // NEW: Extract services from item.services, filter out deleted ones
+  // Extract services from item.services, filter out deleted ones
   const offeredServices = item.services
     ? item.services
-        .filter((service: any) => service.deleted_at === null) // Exclude deleted services
-        .map((service: any) => service.serviceType) // Extract serviceType strings
+        .filter((service: any) => service.deleted_at === null)
+        .map((service: any) => service.serviceType)
     : []
 
   // Filter services to only show what this store offers
@@ -225,7 +251,7 @@ export default function StoreCard ({
     for (let i = 0; i < fullStars; i++) {
       stars.push(
         <Text key={i} style={styles.star}>
-          <Star size={14} color='#FFD700' fill="#FFD700" />
+          <Star size={14} color='#FFD700' fill='#FFD700' />
         </Text>
       )
     }
@@ -233,7 +259,7 @@ export default function StoreCard ({
     if (hasHalfStar) {
       stars.push(
         <Text key='half' style={styles.star}>
-           <StarHalf size={14} color='#FFD700' fill="#FFD700"/>
+          <StarHalf size={14} color='#FFD700' fill='#FFD700' />
         </Text>
       )
     }
@@ -245,22 +271,17 @@ export default function StoreCard ({
   const handleOrderPress = () => {
     console.log('🛒 Opening service selection for store:', item.title)
 
-    // If store offers no services, show alert and return
     if (availableServices.length === 0) {
       alert('No services available at this store')
       return
     }
 
-    // If store offers only one service, directly start order
     if (availableServices.length === 1) {
       handleServiceSelect(availableServices[0])
       return
     }
 
-    // Show modal for multiple services
     setShowServiceModal(true)
-
-    // Call original onPress if provided
     onPress?.(item)
   }
 
@@ -268,17 +289,13 @@ export default function StoreCard ({
   const handleServiceSelect = (service: any) => {
     console.log('🔧 Service selected:', service.title, 'for store:', item)
 
-    // Close modal
     setShowServiceModal(false)
 
-    // Dispatch startOrderFromStore action with selected service
     const constructStoreAddress = (storeData: any) => {
-      // Get the first (primary) address from storeAddresses array
       const storeAddress = storeData.storeAddresses?.[0]
       console.log(storeData)
 
       if (!storeAddress) {
-        // Return default empty address if no address found
         return {
           address_line: '',
           city: '',
@@ -290,7 +307,6 @@ export default function StoreCard ({
         }
       }
 
-      // Construct Address object matching your interface
       return {
         address_line: `${storeAddress.house_no || ''}${
           storeAddress.street_address ? ', ' + storeAddress.street_address : ''
@@ -304,23 +320,20 @@ export default function StoreCard ({
       }
     }
 
-    // Updated dispatch call
     dispatch(
       startOrderFromStore({
         serviceType: service.id,
         store: {
           store_id: Number(item.id),
           store_name: item.storeName || item.title,
-          store_address: constructStoreAddress(item) // Pass constructed Address object
+          store_address: constructStoreAddress(item)
         }
       })
     )
 
-    // Navigate to order flow
     router.push('./order')
   }
 
-  // Handle modal cancel
   const handleModalCancel = () => {
     setShowServiceModal(false)
   }
@@ -348,14 +361,18 @@ export default function StoreCard ({
           >
             <Heart
               size={14}
-              color={item.isFavorite ? '#FF4757' : 'white'}
-              fill={item.isFavorite ? '#FF4757' : 'transparent'}
+              color={item.isFavorite ? colors.notification : colors.background}
+              fill={item.isFavorite ? colors.notification : 'transparent'}
             />
           </TouchableOpacity>
 
           {item.preferred && (
             <View style={styles.verifiedBadge}>
-              <BadgeCheck fill={'#1876A9'} stroke={'white'} size={15} />
+              <BadgeCheck
+                fill={colors.primary}
+                stroke={colors.background}
+                size={15}
+              />
               <Text style={styles.verifiedText}>TYDII</Text>
             </View>
           )}
@@ -382,13 +399,13 @@ export default function StoreCard ({
             </Text>
             <ArrowRight
               size={16}
-              color={availableServices.length === 0 ? '#ccc' : colors.primary}
+              color={
+                availableServices.length === 0
+                  ? colors.textSecondary
+                  : colors.primary
+              }
               strokeWidth={3}
-              style={{
-                backgroundColor: 'white',
-                padding: 10,
-                borderRadius: 50
-              }}
+              style={[styles.arrowIcon, { backgroundColor: 'white' }]}
             />
           </TouchableOpacity>
         </View>
@@ -401,6 +418,7 @@ export default function StoreCard ({
         storeName={item.title || item.storeName || 'Store'}
         onServiceSelect={handleServiceSelect}
         onCancel={handleModalCancel}
+        colors={colors}
       />
     </>
   )
@@ -411,10 +429,10 @@ const createStyles = (colors: any, cardWidth: number) =>
   StyleSheet.create({
     card: {
       width: cardWidth,
-      backgroundColor: 'white',
+      backgroundColor: colors.surface,
       borderRadius: 16,
       padding: 8,
-      shadowColor: '#000',
+      shadowColor: colors.text,
       shadowOffset: {
         width: 4,
         height: 4
@@ -422,7 +440,9 @@ const createStyles = (colors: any, cardWidth: number) =>
       shadowOpacity: 0.1,
       shadowRadius: 8,
       elevation: 3,
-      overflow: 'hidden'
+      overflow: 'hidden',
+      borderWidth: colors.background === '#000000' ? 1 : 0,
+      borderColor: colors.border
     },
     imageContainer: {
       position: 'relative',
@@ -456,8 +476,8 @@ const createStyles = (colors: any, cardWidth: number) =>
       height: 25,
       borderRadius: 16,
       borderWidth: 1,
-      borderColor: colors.light,
-      backgroundColor: 'transparent',
+      borderColor: colors.border,
+      backgroundColor: 'rgba(0,0,0,0.3)',
       justifyContent: 'center',
       alignItems: 'center'
     },
@@ -465,8 +485,8 @@ const createStyles = (colors: any, cardWidth: number) =>
       position: 'absolute',
       bottom: 12,
       right: 12,
-      backgroundColor: '#FFFFFF',
-      opacity: 0.8,
+      backgroundColor: colors.background,
+      opacity: 0.9,
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 4,
@@ -476,23 +496,9 @@ const createStyles = (colors: any, cardWidth: number) =>
       gap: 3
     },
     verifiedText: {
-      color: 'black',
+      color: colors.text,
       fontSize: 8,
       letterSpacing: 1,
-      fontWeight: '600'
-    },
-    servicesBadge: {
-      position: 'absolute',
-      bottom: 12,
-      left: 12,
-      backgroundColor: '#008ECC',
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 6
-    },
-    servicesBadgeText: {
-      color: 'white',
-      fontSize: 10,
       fontWeight: '600'
     },
     cardContent: {
@@ -516,7 +522,7 @@ const createStyles = (colors: any, cardWidth: number) =>
     orderButton: {
       borderRadius: 8,
       overflow: 'hidden',
-      backgroundColor: '#02537F',
+      backgroundColor: colors.primary,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -524,134 +530,131 @@ const createStyles = (colors: any, cardWidth: number) =>
       paddingHorizontal: 16
     },
     orderButtonDisabled: {
-      backgroundColor: '#cccccc'
+      backgroundColor: colors.border
     },
     orderButtonText: {
-      color: 'white',
+      color: colors.background,
       fontSize: 14,
       fontWeight: '600',
       marginRight: 6
+    },
+    arrowIcon: {
+      padding: 10,
+      borderRadius: 50
     }
   })
 
 // Service Card Styles
-const serviceCardStyles = StyleSheet.create({
-  card: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginVertical: 8,
-    marginHorizontal: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  disabledCard: {
-    opacity: 0.6
-  },
-  imageContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16
-  },
-  serviceImage: {
-    width: 40,
-    height: 40
-  },
-  cardContent: {
-    flex: 1
-  },
-  serviceTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4
-  },
-  serviceDescription: {
-    fontSize: 14
-  },
-  arrowContainer: {
-    padding: 8
-  }
-})
+const createServiceCardStyles = (colors: any) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: 16,
+      marginVertical: 8,
+      marginHorizontal: 4,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: colors.background === '#000000' ? 1 : 0,
+      borderColor: colors.border
+    },
+    disabledCard: {
+      opacity: 0.6
+    },
+    imageContainer: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 16
+    },
+    serviceImage: {
+      width: 40,
+      height: 40
+    },
+    cardContent: {
+      flex: 1
+    },
+    serviceTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      marginBottom: 4
+    },
+    serviceDescription: {
+      fontSize: 14
+    },
+    arrowContainer: {
+      padding: 8
+    }
+  })
 
 // Modal Styles
-const modalStyles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end'
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '80%',
-    paddingTop: 20
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 16
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333'
-  },
-  closeButton: {
-    padding: 4
-  },
-  closeButtonText: {
-    fontSize: 24,
-    color: '#666'
-  },
-  storeNameText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 20
-  },
-  storeName: {
-    fontWeight: '600',
-    color: '#008ECC'
-  },
-  servicesList: {
-    paddingHorizontal: 16
-  },
-  servicesContainer: {
-    paddingBottom: 20
-  },
-  noServicesContainer: {
-    padding: 40,
-    alignItems: 'center'
-  },
-  noServicesText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center'
-  },
-  cancelButton: {
-    margin: 20,
-    paddingVertical: 14,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-    alignItems: 'center'
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666'
-  }
-})
+const createModalStyles = (colors: any) =>
+  StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'flex-end'
+    },
+    modalContent: {
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      maxHeight: '80%',
+      paddingTop: 20
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingBottom: 16
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: '600'
+    },
+    closeButton: {
+      padding: 8,
+      borderRadius: 20
+    },
+    storeNameText: {
+      fontSize: 14,
+      textAlign: 'center',
+      marginBottom: 20,
+      paddingHorizontal: 20
+    },
+    storeName: {
+      fontWeight: '600'
+    },
+    servicesList: {
+      paddingHorizontal: 16
+    },
+    servicesContainer: {
+      paddingBottom: 20
+    },
+    noServicesContainer: {
+      padding: 40,
+      alignItems: 'center'
+    },
+    noServicesText: {
+      fontSize: 16,
+      textAlign: 'center'
+    },
+    cancelButton: {
+      margin: 20,
+      paddingVertical: 14,
+      borderRadius: 8,
+      borderWidth: 1,
+      alignItems: 'center'
+    },
+    cancelButtonText: {
+      fontSize: 16,
+      fontWeight: '600'
+    }
+  })

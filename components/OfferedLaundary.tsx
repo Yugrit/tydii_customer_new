@@ -119,7 +119,7 @@ export default function OfferedLaundry () {
   }
 
   const getServiceTags = (services: any[]) => {
-    if (!services || services.length === 0) return ['Laundry']
+    if (!services || services.length === 0) return ['Coming Soon']
 
     return services.map(service => {
       switch (service.serviceType) {
@@ -129,8 +129,6 @@ export default function OfferedLaundry () {
           return 'Tailoring'
         case 'DRYCLEANING':
           return 'Dry Cleaning'
-        default:
-          return service.serviceType || 'Laundry'
       }
     })
   }

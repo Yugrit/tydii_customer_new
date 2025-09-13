@@ -14,7 +14,22 @@ export default function OrderLayout () {
             presentation: 'card',
             animation: 'slide_from_right'
           }}
-        />
+        >
+          <Stack.Screen
+            name='index'
+            options={{
+              title: 'Settings',
+              headerShown: false
+            }}
+          />
+          <Stack.Screen
+            name='notification'
+            options={{
+              title: 'Notifications'
+              // headerShown: true
+            }}
+          />
+        </Stack>
       </View>
     </View>
   )

@@ -1,6 +1,7 @@
 import OrderProgressBar from '@/components/order/OrderTrackingBar'
 import FeedbackModal from '@/components/ui/FeedbackModal'
 import { ServiceTypeEnum } from '@/enums'
+import { useThemeColors } from '@/hooks/useThemeColor'
 import ApiService from '@/services/ApiService'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { MessageCircle, Star, Truck, UserStar } from 'lucide-react-native'
@@ -18,6 +19,7 @@ import {
 
 export default function OrderTrackingScreen () {
   const { orderId } = useLocalSearchParams()
+  const colors = useThemeColors()
 
   const [orderData, setOrderData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -321,6 +323,8 @@ export default function OrderTrackingScreen () {
 
   // Render simplified pickup section
   const renderPickupSection = (pickup: any, index: number) => {
+    const styles = createStyles(colors)
+
     return (
       <View key={pickup.id} style={styles.pickupCard}>
         <Text style={styles.pickupTitle}>
@@ -348,20 +352,18 @@ export default function OrderTrackingScreen () {
 
         {/* Action Buttons - Chat and Feedback */}
         <View style={styles.actionButtonsRow}>
-          {
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() =>
-                handleChatDriver(
-                  pickup.id,
-                  pickup.deliveryPerson?.name || 'Driver'
-                )
-              }
-            >
-              <MessageCircle size={18} color='white' />
-              <Text style={styles.actionButtonText}>Chat</Text>
-            </TouchableOpacity>
-          }
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() =>
+              handleChatDriver(
+                pickup.id,
+                pickup.deliveryPerson?.name || 'Driver'
+              )
+            }
+          >
+            <MessageCircle size={18} color={colors.background} />
+            <Text style={styles.actionButtonText}>Chat</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.actionButton}
@@ -372,7 +374,7 @@ export default function OrderTrackingScreen () {
               )
             }
           >
-            <UserStar size={18} color='white' />
+            <UserStar size={18} color={colors.background} />
             <Text style={styles.actionButtonTextGreen}>Feedback</Text>
           </TouchableOpacity>
         </View>
@@ -382,6 +384,8 @@ export default function OrderTrackingScreen () {
 
   // Render all pickup sections
   const renderPickupSections = () => {
+    const styles = createStyles(colors)
+
     if (!orderData?.pickups || orderData.pickups.length === 0) {
       return (
         <View style={styles.pickupCard}>
@@ -405,11 +409,13 @@ export default function OrderTrackingScreen () {
     )
   }
 
+  const styles = createStyles(colors)
+
   // Loading state
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size='large' color='#008ECC' />
+        <ActivityIndicator size='large' color={colors.primary} />
         <Text style={styles.loadingText}>Loading order details...</Text>
       </View>
     )
@@ -521,7 +527,7 @@ export default function OrderTrackingScreen () {
               style={styles.actionButton}
               onPress={handleChatStore}
             >
-              <MessageCircle size={18} color='white' />
+              <MessageCircle size={18} color={colors.background} />
               <Text style={styles.actionButtonText}>Chat</Text>
             </TouchableOpacity>
 
@@ -530,7 +536,7 @@ export default function OrderTrackingScreen () {
                 style={styles.actionButton}
                 onPress={handleFeedbackStore}
               >
-                <UserStar size={18} color='white' />
+                <UserStar size={18} color={colors.background} />
                 <Text style={styles.actionButtonTextGreen}>Feedback</Text>
               </TouchableOpacity>
             )}
@@ -587,318 +593,326 @@ export default function OrderTrackingScreen () {
   )
 }
 
-// Keep all your existing styles exactly the same
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa'
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa'
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666666'
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    paddingHorizontal: 32
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#dc3545',
-    textAlign: 'center'
-  },
-  headerContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 15,
-    paddingBottom: 0
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#333333',
-    includeFontPadding: false
-  },
-  titleAccent: {
-    color: '#008ECC'
-  },
-  underline: {
-    marginTop: 8,
-    height: 3,
-    width: '28%',
-    backgroundColor: '#008ECC',
-    borderRadius: 2
-  },
-  orderInfoContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 16
-  },
-  orderId: {
-    fontSize: 16,
-    fontWeight: '400',
-    color: '#333333',
-    marginBottom: 12,
-    includeFontPadding: false
-  },
-  deliveryContainer: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  deliveryText: {
-    marginLeft: 8,
-    fontSize: 16,
-    includeFontPadding: false
-  },
-  deliveryLabel: {
-    fontWeight: '600',
-    color: '#28a745'
-  },
-  deliveryDate: {
-    fontWeight: '400',
-    color: '#666666'
-  },
-  orderCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginTop: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
-  },
-  orderCardHeader: {
-    flexDirection: 'row',
-    marginBottom: 10
-  },
-  laundryImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    marginRight: 16
-  },
-  laundryInfo: {
-    flex: 1,
-    justifyContent: 'space-between'
-  },
-  orderIdText: {
-    fontSize: 14,
-    color: '#666666',
-    marginBottom: 4
-  },
-  laundryLabel: {
-    fontSize: 12,
-    color: '#888888',
-    marginBottom: 2
-  },
-  laundryName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#333333',
-    marginBottom: 8
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  servicesSection: {
-    marginBottom: 5
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333333',
-    marginBottom: 8
-  },
-  serviceItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12
-  },
-  serviceIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
-    backgroundColor: '#e8f4fd',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12
-  },
-  serviceIconText: {
-    fontSize: 16
-  },
-  serviceDetails: {
-    flex: 1
-  },
-  serviceName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333333',
-    marginBottom: 2
-  },
-  serviceWeight: {
-    fontSize: 14,
-    color: '#666666'
-  },
-  servicePrice: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#333333'
-  },
-  dottedSeparator: {
-    height: 1,
-    backgroundColor: 'transparent',
-    borderStyle: 'dotted',
-    borderWidth: 1,
-    borderColor: '#d0d0d0',
-    marginBottom: 10
-  },
-  datesSection: {
-    marginBottom: 2
-  },
-  dateRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12
-  },
-  dateLabel: {
-    fontSize: 16,
-    color: '#666666'
-  },
-  dateValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333333'
-  },
-  // Simplified Pickup Card Styles
-  pickupCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginTop: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
-  },
-  pickupTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#333333',
-    marginBottom: 16,
-    textAlign: 'center'
-  },
-  driverInfo: {
-    marginBottom: 16
-  },
-  driverRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12
-  },
-  driverLabel: {
-    fontSize: 16,
-    color: '#666666',
-    fontWeight: '500'
-  },
-  driverValue: {
-    fontSize: 16,
-    color: '#333333',
-    fontWeight: '600'
-  },
-  actionButtonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    backgroundColor: '#02537F',
-    flex: 1,
-    justifyContent: 'center'
-  },
-  actionButtonText: {
-    marginLeft: 6,
-    fontSize: 14,
-    fontWeight: '600',
-    color: 'white'
-  },
-  actionButtonTextGreen: {
-    marginLeft: 6,
-    fontSize: 14,
-    fontWeight: '600',
-    color: 'white'
-  },
-  billingCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
-  },
-  billingTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333333',
-    marginBottom: 20
-  },
-  billingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16
-  },
-  billingLabel: {
-    fontSize: 16,
-    color: '#666666',
-    fontWeight: '400'
-  },
-  billingValue: {
-    fontSize: 16,
-    color: '#333333',
-    fontWeight: '600'
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0'
-  },
-  totalLabel: {
-    fontSize: 18,
-    color: '#333333',
-    fontWeight: '700'
-  },
-  totalValue: {
-    fontSize: 20,
-    color: '#333333',
-    fontWeight: '700'
-  }
-})
+// Updated styles with theme colors
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.background
+    },
+    loadingText: {
+      marginTop: 16,
+      fontSize: 16,
+      color: colors.textSecondary
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      paddingHorizontal: 32
+    },
+    errorText: {
+      fontSize: 16,
+      color: colors.notification,
+      textAlign: 'center'
+    },
+    headerContainer: {
+      paddingHorizontal: 16,
+      paddingTop: 15,
+      paddingBottom: 0
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.text,
+      includeFontPadding: false
+    },
+    titleAccent: {
+      color: colors.primary
+    },
+    underline: {
+      marginTop: 8,
+      height: 3,
+      width: '28%',
+      backgroundColor: colors.primary,
+      borderRadius: 2
+    },
+    orderInfoContainer: {
+      paddingHorizontal: 16,
+      paddingVertical: 16
+    },
+    orderId: {
+      fontSize: 16,
+      fontWeight: '400',
+      color: colors.text,
+      marginBottom: 12,
+      includeFontPadding: false
+    },
+    deliveryContainer: {
+      flexDirection: 'row',
+      alignItems: 'center'
+    },
+    deliveryText: {
+      marginLeft: 8,
+      fontSize: 16,
+      includeFontPadding: false
+    },
+    deliveryLabel: {
+      fontWeight: '600',
+      color: '#28a745'
+    },
+    deliveryDate: {
+      fontWeight: '400',
+      color: colors.textSecondary
+    },
+    orderCard: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      marginHorizontal: 16,
+      marginTop: 16,
+      padding: 16,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      borderWidth: colors.background === '#000000' ? 1 : 0,
+      borderColor: colors.border
+    },
+    orderCardHeader: {
+      flexDirection: 'row',
+      marginBottom: 10
+    },
+    laundryImage: {
+      width: 80,
+      height: 80,
+      borderRadius: 8,
+      marginRight: 16,
+      backgroundColor: colors.surface
+    },
+    laundryInfo: {
+      flex: 1,
+      justifyContent: 'space-between'
+    },
+    orderIdText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 4
+    },
+    laundryLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginBottom: 2
+    },
+    laundryName: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 8
+    },
+    ratingRow: {
+      flexDirection: 'row',
+      alignItems: 'center'
+    },
+    servicesSection: {
+      marginBottom: 5
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 8
+    },
+    serviceItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12
+    },
+    serviceIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 6,
+      backgroundColor: colors.light,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12
+    },
+    serviceIconText: {
+      fontSize: 16
+    },
+    serviceDetails: {
+      flex: 1
+    },
+    serviceName: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 2
+    },
+    serviceWeight: {
+      fontSize: 14,
+      color: colors.textSecondary
+    },
+    servicePrice: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text
+    },
+    dottedSeparator: {
+      height: 1,
+      backgroundColor: 'transparent',
+      borderStyle: 'dotted',
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 10
+    },
+    datesSection: {
+      marginBottom: 2
+    },
+    dateRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12
+    },
+    dateLabel: {
+      fontSize: 16,
+      color: colors.textSecondary
+    },
+    dateValue: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text
+    },
+    // Simplified Pickup Card Styles
+    pickupCard: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      marginHorizontal: 16,
+      marginTop: 16,
+      padding: 16,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      borderWidth: colors.background === '#000000' ? 1 : 0,
+      borderColor: colors.border
+    },
+    pickupTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 16,
+      textAlign: 'center'
+    },
+    driverInfo: {
+      marginBottom: 16
+    },
+    driverRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12
+    },
+    driverLabel: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      fontWeight: '500'
+    },
+    driverValue: {
+      fontSize: 16,
+      color: colors.text,
+      fontWeight: '600'
+    },
+    actionButtonsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      gap: 12
+    },
+    actionButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+      flex: 1,
+      justifyContent: 'center'
+    },
+    actionButtonText: {
+      marginLeft: 6,
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.background
+    },
+    actionButtonTextGreen: {
+      marginLeft: 6,
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.background
+    },
+    billingCard: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      marginHorizontal: 16,
+      marginTop: 16,
+      marginBottom: 20,
+      padding: 20,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      borderWidth: colors.background === '#000000' ? 1 : 0,
+      borderColor: colors.border
+    },
+    billingTitle: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 20
+    },
+    billingRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16
+    },
+    billingLabel: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      fontWeight: '400'
+    },
+    billingValue: {
+      fontSize: 16,
+      color: colors.text,
+      fontWeight: '600'
+    },
+    totalRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 8,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.border
+    },
+    totalLabel: {
+      fontSize: 18,
+      color: colors.text,
+      fontWeight: '700'
+    },
+    totalValue: {
+      fontSize: 20,
+      color: colors.text,
+      fontWeight: '700'
+    }
+  })

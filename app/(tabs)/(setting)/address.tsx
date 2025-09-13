@@ -1,3 +1,4 @@
+import { useThemeColors } from '@/hooks/useThemeColor'
 import { useRouter } from 'expo-router'
 import {
   Building,
@@ -21,6 +22,7 @@ import { useSelector } from 'react-redux'
 
 export default function ManageAddressScreen () {
   const router = useRouter()
+  const colors = useThemeColors()
 
   // Get user data from Redux (assuming addresses are stored in user state)
   const user = useSelector((state: any) => state.user.userData)
@@ -94,12 +96,12 @@ export default function ManageAddressScreen () {
 
   const handleAddNewAddress = () => {
     console.log('Add new address')
-    // router.push('/add-address')
+    router.push('/add-address')
   }
 
   const handleEditAddress = (id: number) => {
     console.log('Edit address:', id)
-    // router.push(`/edit-address/${id}`)
+    router.push(`./edit-address?id=${id}`)
   }
 
   const handleDeleteAddress = (id: number) => {
@@ -138,12 +140,13 @@ export default function ManageAddressScreen () {
 
   const renderAddressItem = ({ item }: { item: any }) => {
     const IconComponent = getAddressIcon(item.addressType)
+    const styles = createStyles(colors)
 
     return (
       <View style={styles.addressCard}>
         <View style={styles.addressHeader}>
           <View style={styles.addressIconContainer}>
-            <IconComponent size={20} color='#02537F' />
+            <IconComponent size={20} color={colors.primary} />
           </View>
           <View style={styles.addressInfo}>
             <View style={styles.addressTypeContainer}>
@@ -172,9 +175,9 @@ export default function ManageAddressScreen () {
             <Switch
               value={item.isPrimary}
               onValueChange={() => handleSetPrimary(item.id)}
-              trackColor={{ false: '#e0e0e0', true: '#02537F' }}
-              thumbColor={item.isPrimary ? '#ffffff' : '#f4f3f4'}
-              ios_backgroundColor='#e0e0e0'
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={item.isPrimary ? colors.background : colors.surface}
+              ios_backgroundColor={colors.border}
             />
           </View>
 
@@ -183,20 +186,22 @@ export default function ManageAddressScreen () {
               style={styles.actionButton}
               onPress={() => handleEditAddress(item.id)}
             >
-              <Edit3 size={18} color='#02537F' />
+              <Edit3 size={18} color={colors.primary} />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => handleDeleteAddress(item.id)}
             >
-              <Trash2 size={18} color='#dc3545' />
+              <Trash2 size={18} color={colors.notification} />
             </TouchableOpacity>
           </View>
         </View>
       </View>
     )
   }
+
+  const styles = createStyles(colors)
 
   return (
     <View style={styles.container}>
@@ -213,7 +218,7 @@ export default function ManageAddressScreen () {
           style={styles.addButton}
           onPress={handleAddNewAddress}
         >
-          <Plus size={16} color='#ffffff' strokeWidth={2} />
+          <Plus size={16} color={colors.background} strokeWidth={2} />
           <Text style={styles.addButtonText}>Add New</Text>
         </TouchableOpacity>
       </View>
@@ -230,7 +235,7 @@ export default function ManageAddressScreen () {
         />
       ) : (
         <View style={styles.emptyState}>
-          <MapPin size={48} color='#cccccc' />
+          <MapPin size={48} color={colors.border} />
           <Text style={styles.emptyTitle}>No Addresses Found</Text>
           <Text style={styles.emptyText}>
             Add your first address to get started with deliveries
@@ -247,169 +252,172 @@ export default function ManageAddressScreen () {
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-    paddingHorizontal: 16,
-    paddingVertical: 20
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 24
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#333333'
-  },
-  titleAccent: {
-    color: '#02537F'
-  },
-  underline: {
-    width: 100,
-    height: 3,
-    backgroundColor: '#02537F',
-    marginTop: 8
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#02537F',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    gap: 6
-  },
-  addButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600'
-  },
-  addressList: {
-    flex: 1
-  },
-  listContent: {
-    paddingBottom: 20
-  },
-  addressCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
-  },
-  addressHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 16
-  },
-  addressIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#e5f3f8',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    marginTop: 2
-  },
-  addressInfo: {
-    flex: 1
-  },
-  addressTypeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4
-  },
-  addressTypeLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#666666',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5
-  },
-  primaryBadge: {
-    backgroundColor: '#02537F',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    marginLeft: 8
-  },
-  primaryBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#ffffff'
-  },
-  addressText: {
-    fontSize: 14,
-    color: '#333333',
-    lineHeight: 20
-  },
-  addressActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  primarySection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1
-  },
-  primaryLabel: {
-    fontSize: 14,
-    color: '#666666',
-    marginRight: 12
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 12
-  },
-  actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#f8fafc',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#e0e0e0'
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333333',
-    marginTop: 16,
-    marginBottom: 8
-  },
-  emptyText: {
-    fontSize: 14,
-    color: '#666666',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24
-  },
-  emptyButton: {
-    backgroundColor: '#02537F',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8
-  },
-  emptyButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600'
-  }
-})
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      paddingHorizontal: 16,
+      paddingVertical: 20
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: 24
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.text
+    },
+    titleAccent: {
+      color: colors.primary
+    },
+    underline: {
+      width: 100,
+      height: 3,
+      backgroundColor: colors.primary,
+      marginTop: 8
+    },
+    addButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 8,
+      gap: 6
+    },
+    addButtonText: {
+      color: colors.background,
+      fontSize: 14,
+      fontWeight: '600'
+    },
+    addressList: {
+      flex: 1
+    },
+    listContent: {
+      paddingBottom: 20
+    },
+    addressCard: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      borderWidth: colors.background === '#000000' ? 1 : 0,
+      borderColor: colors.border
+    },
+    addressHeader: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: 16
+    },
+    addressIconContainer: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.light,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+      marginTop: 2
+    },
+    addressInfo: {
+      flex: 1
+    },
+    addressTypeContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 4
+    },
+    addressTypeLabel: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5
+    },
+    primaryBadge: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 10,
+      marginLeft: 8
+    },
+    primaryBadgeText: {
+      fontSize: 10,
+      fontWeight: '600',
+      color: colors.background
+    },
+    addressText: {
+      fontSize: 14,
+      color: colors.text,
+      lineHeight: 20
+    },
+    addressActions: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center'
+    },
+    primarySection: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1
+    },
+    primaryLabel: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginRight: 12
+    },
+    actionButtons: {
+      flexDirection: 'row',
+      gap: 12
+    },
+    actionButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border
+    },
+    emptyState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 32
+    },
+    emptyTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      marginTop: 16,
+      marginBottom: 8
+    },
+    emptyText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+      marginBottom: 24
+    },
+    emptyButton: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: 8
+    },
+    emptyButtonText: {
+      color: colors.background,
+      fontSize: 14,
+      fontWeight: '600'
+    }
+  })

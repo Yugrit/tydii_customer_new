@@ -1,15 +1,20 @@
+import { useColorScheme } from '@/hooks/useColorScheme'
+import { useThemeColors } from '@/hooks/useThemeColor'
 import { useRouter } from 'expo-router'
 import {
   ChevronRight,
   LogOut,
   MapPin,
+  Moon,
   Package,
+  Sun,
   User
 } from 'lucide-react-native'
 import React from 'react'
 import {
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View
@@ -17,6 +22,8 @@ import {
 
 export default function AccountSettingScreen () {
   const router = useRouter()
+  const { isDark, setColorScheme } = useColorScheme()
+  const colors = useThemeColors()
 
   const settingsOptions = [
     {
@@ -45,19 +52,13 @@ export default function AccountSettingScreen () {
         console.log('Navigate to Manage Address')
         router.push('/address')
       }
-    },
-    {
-      id: 'logout',
-      title: 'Log-out',
-      icon: LogOut,
-      onPress: () => {
-        console.log('Log out user')
-        // Handle logout logic
-        // dispatch(logout())
-        // router.replace('/login')
-      }
     }
   ]
+
+  // Dark mode toggle handler
+  const handleDarkModeToggle = (value: boolean) => {
+    setColorScheme(value ? 'dark' : 'light')
+  }
 
   const renderSettingItem = (item: any) => {
     const IconComponent = item.icon
@@ -70,38 +71,154 @@ export default function AccountSettingScreen () {
         activeOpacity={0.7}
       >
         <View style={styles.settingItemLeft}>
-          <View style={styles.iconContainer}>
-            <IconComponent size={20} color='#666666' strokeWidth={1.5} />
+          <View
+            style={[styles.iconContainer, { backgroundColor: colors.surface }]}
+          >
+            <IconComponent
+              size={20}
+              color={colors.textSecondary}
+              strokeWidth={1.5}
+            />
           </View>
-          <Text style={styles.settingTitle}>{item.title}</Text>
+          <Text style={[styles.settingTitle, { color: colors.text }]}>
+            {item.title}
+          </Text>
         </View>
 
-        <ChevronRight size={20} color='#cccccc' strokeWidth={1.5} />
+        <ChevronRight
+          size={20}
+          color={colors.textSecondary}
+          strokeWidth={1.5}
+        />
+      </TouchableOpacity>
+    )
+  }
+
+  // Dark mode toggle item
+  const renderDarkModeToggle = () => {
+    return (
+      <View key='dark-mode' style={styles.settingItem}>
+        <View style={styles.settingItemLeft}>
+          <View
+            style={[styles.iconContainer, { backgroundColor: colors.surface }]}
+          >
+            {isDark ? (
+              <Moon size={20} color={colors.textSecondary} strokeWidth={1.5} />
+            ) : (
+              <Sun size={20} color={colors.textSecondary} strokeWidth={1.5} />
+            )}
+          </View>
+          <View style={styles.darkModeContent}>
+            <Text style={[styles.settingTitle, { color: colors.text }]}>
+              Dark Mode
+            </Text>
+            <Text
+              style={[styles.settingSubtitle, { color: colors.textSecondary }]}
+            >
+              {isDark ? 'Dark theme enabled' : 'Light theme enabled'}
+            </Text>
+          </View>
+        </View>
+
+        <Switch
+          value={isDark}
+          onValueChange={handleDarkModeToggle}
+          trackColor={{
+            false: colors.primary,
+            true: colors.primary
+          }}
+          thumbColor={colors.surface}
+          ios_backgroundColor={colors.border}
+        />
+      </View>
+    )
+  }
+
+  // Logout item
+  const renderLogoutItem = () => {
+    return (
+      <TouchableOpacity
+        key='logout'
+        style={styles.settingItem}
+        onPress={() => {
+          console.log('Log out user')
+          // Handle logout logic
+          // dispatch(logout())
+          // router.replace('/login')
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={styles.settingItemLeft}>
+          <View
+            style={[styles.iconContainer, { backgroundColor: colors.surface }]}
+          >
+            <LogOut size={20} color={colors.notification} strokeWidth={1.5} />
+          </View>
+          <Text style={[styles.settingTitle, { color: colors.notification }]}>
+            Log-out
+          </Text>
+        </View>
+
+        <ChevronRight
+          size={20}
+          color={colors.textSecondary}
+          strokeWidth={1.5}
+        />
       </TouchableOpacity>
     )
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      <View style={[styles.content, { backgroundColor: colors.background }]}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>
-            Account <Text style={styles.titleAccent}>Setting</Text>
+          <Text style={[styles.title, { color: colors.text }]}>
+            Account{' '}
+            <Text style={[styles.titleAccent, { color: colors.primary }]}>
+              Setting
+            </Text>
           </Text>
-          <View style={styles.underline} />
+          <View
+            style={[styles.underline, { backgroundColor: colors.primary }]}
+          />
         </View>
 
         {/* Settings Card */}
-        <View style={styles.settingsCard}>
+        <View
+          style={[
+            styles.settingsCard,
+            {
+              backgroundColor: colors.background,
+              shadowColor: isDark ? colors.text : '#000'
+            }
+          ]}
+        >
+          {/* Regular Settings */}
           {settingsOptions.map((item, index) => (
             <View key={item.id}>
               {renderSettingItem(item)}
               {index < settingsOptions.length - 1 && (
-                <View style={styles.separator} />
+                <View
+                  style={[styles.separator, { backgroundColor: colors.border }]}
+                />
               )}
             </View>
           ))}
+
+          {/* Dark Mode Toggle */}
+          <View
+            style={[styles.separator, { backgroundColor: colors.border }]}
+          />
+          {renderDarkModeToggle()}
+
+          {/* Logout */}
+          <View
+            style={[styles.separator, { backgroundColor: colors.border }]}
+          />
+          {renderLogoutItem()}
         </View>
       </View>
     </ScrollView>
@@ -110,8 +227,7 @@ export default function AccountSettingScreen () {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#f8fafc'
+    flex: 1
   },
   content: {
     paddingHorizontal: 16,
@@ -122,23 +238,19 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#333333'
+    fontWeight: '700'
   },
   titleAccent: {
-    color: '#02537F'
+    // Color applied inline
   },
   underline: {
     width: 100,
     height: 3,
-    backgroundColor: '#02537F',
     marginTop: 8
   },
   settingsCard: {
-    backgroundColor: '#ffffff',
     borderRadius: 12,
     paddingVertical: 8,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -160,7 +272,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f8fafc',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16
@@ -168,12 +279,17 @@ const styles = StyleSheet.create({
   settingTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#333333',
     flex: 1
+  },
+  darkModeContent: {
+    flex: 1
+  },
+  settingSubtitle: {
+    fontSize: 14,
+    marginTop: 2
   },
   separator: {
     height: 1,
-    backgroundColor: '#f0f0f0',
     marginLeft: 76, // Align with text, accounting for icon space
     marginRight: 20
   }

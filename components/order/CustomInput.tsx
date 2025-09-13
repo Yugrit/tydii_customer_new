@@ -147,10 +147,10 @@ const CustomInput = forwardRef<CustomInputRef, CustomInputProps>(
         marked[date] = {
           disabled: true,
           disableTouchEvent: true,
-          dotColor: '#ff6b6b',
-          textColor: '#cccccc',
-          selectedColor: '#f0f0f0',
-          selectedTextColor: '#999999'
+          dotColor: colors.notification,
+          textColor: colors.textSecondary,
+          selectedColor: colors.surface,
+          selectedTextColor: colors.textSecondary
         }
       })
 
@@ -167,8 +167,8 @@ const CustomInput = forwardRef<CustomInputRef, CustomInputProps>(
           if (!disabledDates.includes(calendarDate)) {
             marked[calendarDate] = {
               selected: true,
-              selectedColor: '#008ECC',
-              selectedTextColor: 'white'
+              selectedColor: colors.primary,
+              selectedTextColor: colors.background
             }
           }
         } catch {
@@ -180,7 +180,7 @@ const CustomInput = forwardRef<CustomInputRef, CustomInputProps>(
     }
 
     const getIcon = () => {
-      const iconColor = '#008ECC'
+      const iconColor = colors.primary
       const iconSize = 20
 
       switch (type) {
@@ -246,7 +246,9 @@ const CustomInput = forwardRef<CustomInputRef, CustomInputProps>(
             <TextInput
               ref={textInputRef}
               placeholder={disabled ? 'Please select date first' : placeholder}
-              placeholderTextColor={disabled ? '#999' : colors.textSecondary}
+              placeholderTextColor={
+                disabled ? colors.textSecondary : colors.textSecondary
+              }
               style={[
                 styles.input,
                 multiline && styles.inputMultiline,
@@ -300,16 +302,16 @@ const CustomInput = forwardRef<CustomInputRef, CustomInputProps>(
                       backgroundColor: colors.background,
                       calendarBackground: colors.background,
                       textSectionTitleColor: colors.textSecondary,
-                      selectedDayBackgroundColor: '#008ECC',
-                      selectedDayTextColor: 'white',
-                      todayTextColor: '#008ECC',
+                      selectedDayBackgroundColor: colors.primary,
+                      selectedDayTextColor: colors.background,
+                      todayTextColor: colors.primary,
                       dayTextColor: colors.text,
-                      textDisabledColor: '#cccccc',
-                      dotColor: '#ff6b6b',
-                      selectedDotColor: 'white',
-                      arrowColor: '#008ECC',
+                      textDisabledColor: colors.textSecondary,
+                      dotColor: colors.notification,
+                      selectedDotColor: colors.background,
+                      arrowColor: colors.primary,
                       monthTextColor: colors.text,
-                      indicatorColor: '#008ECC',
+                      indicatorColor: colors.primary,
                       textDayFontFamily: 'System',
                       textMonthFontFamily: 'System',
                       textDayHeaderFontFamily: 'System',
@@ -366,7 +368,7 @@ const CustomInput = forwardRef<CustomInputRef, CustomInputProps>(
           </TouchableWithoutFeedback>
         </Modal>
 
-        {/* Dropdown Modal - Same as before */}
+        {/* Dropdown Modal */}
         <Modal
           visible={showDropdown}
           transparent
@@ -452,34 +454,32 @@ const CustomInput = forwardRef<CustomInputRef, CustomInputProps>(
 
 CustomInput.displayName = 'CustomInput'
 
-// Updated styles with disabled date styling
+// Updated styles with theme colors
 const createStyles = (colors: any) =>
   StyleSheet.create({
-    // ... all existing styles remain the same
-
-    // Add these new styles for disabled dates:
+    // Disabled date styling
     disabledInfo: {
       paddingHorizontal: 20,
       paddingVertical: 8,
-      backgroundColor: '#fff3cd',
+      backgroundColor: colors.light,
       borderBottomWidth: 1,
       borderBottomColor: colors.border
     },
     disabledInfoText: {
       fontSize: 12,
-      color: '#856404',
+      color: colors.textSecondary,
       textAlign: 'center',
       fontWeight: '500'
     },
     todayButtonDisabled: {
-      backgroundColor: '#cccccc',
+      backgroundColor: colors.border,
       opacity: 0.6
     },
     todayButtonTextDisabled: {
-      color: '#999999'
+      color: colors.textSecondary
     },
 
-    // ... all other existing styles remain unchanged
+    // Main styles
     container: {
       marginBottom: 20
     },
@@ -492,10 +492,10 @@ const createStyles = (colors: any) =>
     label: {
       fontSize: 16,
       fontWeight: '600',
-      color: '#242B33'
+      color: colors.text
     },
     required: {
-      color: 'red'
+      color: colors.notification
     },
     addNewButton: {
       flexDirection: 'row',
@@ -505,7 +505,7 @@ const createStyles = (colors: any) =>
     },
     addNewText: {
       fontSize: 12,
-      color: '#008ECC',
+      color: colors.primary,
       fontWeight: '500',
       marginLeft: 4
     },
@@ -513,11 +513,11 @@ const createStyles = (colors: any) =>
       borderWidth: 1.5,
       borderColor: colors.border,
       borderRadius: 12,
-      backgroundColor: colors.card,
+      backgroundColor: colors.surface,
       minHeight: 52
     },
     inputContainerFocused: {
-      borderColor: '#008ECC',
+      borderColor: colors.primary,
       backgroundColor: colors.background,
       shadowColor: colors.primary,
       shadowOffset: {
@@ -529,11 +529,11 @@ const createStyles = (colors: any) =>
       elevation: 2
     },
     inputContainerError: {
-      borderColor: 'red'
+      borderColor: colors.notification
     },
     inputContainerDisabled: {
-      backgroundColor: '#F5F5F5',
-      borderColor: '#E0E0E0',
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
       opacity: 0.8
     },
     inputWrapper: {
@@ -545,7 +545,7 @@ const createStyles = (colors: any) =>
     input: {
       flex: 1,
       fontSize: 16,
-      color: '#242B33',
+      color: colors.text,
       fontWeight: '400'
     },
     inputMultiline: {
@@ -554,7 +554,7 @@ const createStyles = (colors: any) =>
       paddingTop: 12
     },
     inputDisabled: {
-      color: '#999'
+      color: colors.textSecondary
     },
     iconContainer: {
       marginLeft: 12,
@@ -562,7 +562,7 @@ const createStyles = (colors: any) =>
     },
     errorText: {
       fontSize: 12,
-      color: 'red',
+      color: colors.notification,
       marginTop: 4,
       marginLeft: 4
     },
@@ -577,14 +577,16 @@ const createStyles = (colors: any) =>
       borderRadius: 20,
       width: screenWidth - 40,
       maxHeight: '80%',
-      shadowColor: '#000',
+      shadowColor: colors.text,
       shadowOffset: {
         width: 0,
         height: 10
       },
       shadowOpacity: 0.3,
       shadowRadius: 20,
-      elevation: 15
+      elevation: 15,
+      borderWidth: colors.background === '#000000' ? 1 : 0,
+      borderColor: colors.border
     },
     calendarHeader: {
       flexDirection: 'row',
@@ -614,10 +616,10 @@ const createStyles = (colors: any) =>
       paddingHorizontal: 24,
       paddingVertical: 12,
       borderRadius: 8,
-      backgroundColor: colors.muted
+      backgroundColor: colors.surface
     },
     cancelButtonText: {
-      color: colors.mutedForeground,
+      color: colors.textSecondary,
       fontWeight: '600',
       fontSize: 16
     },
@@ -625,10 +627,10 @@ const createStyles = (colors: any) =>
       paddingHorizontal: 24,
       paddingVertical: 12,
       borderRadius: 8,
-      backgroundColor: '#008ECC'
+      backgroundColor: colors.primary
     },
     todayButtonText: {
-      color: 'white',
+      color: colors.background,
       fontWeight: '600',
       fontSize: 16
     },
@@ -640,14 +642,16 @@ const createStyles = (colors: any) =>
       borderRadius: 16,
       width: screenWidth - 40,
       maxHeight: 500,
-      shadowColor: colors.foreground,
+      shadowColor: colors.text,
       shadowOffset: {
         width: 0,
         height: 8
       },
       shadowOpacity: 0.25,
       shadowRadius: 16,
-      elevation: 12
+      elevation: 12,
+      borderWidth: colors.background === '#000000' ? 1 : 0,
+      borderColor: colors.border
     },
     dropdownHeader: {
       flexDirection: 'row',
@@ -683,7 +687,7 @@ const createStyles = (colors: any) =>
       width: 8,
       height: 8,
       borderRadius: 4,
-      backgroundColor: '#008ECC'
+      backgroundColor: colors.primary
     },
     emptyContainer: {
       padding: 40,
@@ -692,7 +696,7 @@ const createStyles = (colors: any) =>
     },
     emptyText: {
       fontSize: 14,
-      color: '#999',
+      color: colors.textSecondary,
       textAlign: 'center'
     },
     separator: {

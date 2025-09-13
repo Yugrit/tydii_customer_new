@@ -1,3 +1,4 @@
+import { useThemeColors } from '@/hooks/useThemeColor'
 import ApiService from '@/services/ApiService'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -40,6 +41,7 @@ interface ApiMessage {
 
 export default function ChatScreen () {
   const router = useRouter()
+  const colors = useThemeColors()
   const { id, type } = useLocalSearchParams()
 
   const [messages, setMessages] = useState<Message[]>([])
@@ -105,6 +107,8 @@ export default function ChatScreen () {
   const renderPaymentModal = () => {
     if (!selectedMismatch) return null
 
+    const styles = createStyles(colors)
+
     return (
       <Modal
         visible={showPaymentModal}
@@ -120,7 +124,7 @@ export default function ChatScreen () {
                 style={styles.closeButton}
                 onPress={() => setShowPaymentModal(false)}
               >
-                <Ionicons name='close' size={24} color='#64748b' />
+                <Ionicons name='close' size={24} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -161,7 +165,7 @@ export default function ChatScreen () {
                 disabled={processingPayment}
               >
                 {processingPayment ? (
-                  <ActivityIndicator size={16} color='#ffffff' />
+                  <ActivityIndicator size={16} color={colors.background} />
                 ) : (
                   <Text style={styles.proceedButtonText}>Proceed</Text>
                 )}
@@ -178,10 +182,12 @@ export default function ChatScreen () {
     const mismatch = item.relatedMismatch
     if (!mismatch) return null
 
+    const styles = createStyles(colors)
+
     return (
       <View style={styles.mismatchContainer}>
         <View style={styles.mismatchHeader}>
-          <Ionicons name='alert-circle' size={18} color='#02537F' />
+          <Ionicons name='alert-circle' size={18} color={colors.primary} />
           <Text style={styles.mismatchTitle}>Order Mismatch</Text>
         </View>
 
@@ -337,15 +343,15 @@ export default function ChatScreen () {
   const getStatusIconColor = (status?: string) => {
     switch (status) {
       case 'sending':
-        return '#94a3b8'
+        return colors.textSecondary
       case 'sent':
-        return '#64748b'
+        return colors.textSecondary
       case 'delivered':
-        return '#3b82f6'
+        return colors.primary
       case 'read':
         return '#10b981'
       default:
-        return '#94a3b8'
+        return colors.textSecondary
     }
   }
 
@@ -453,6 +459,8 @@ export default function ChatScreen () {
 
   // Render message item
   const renderMessage = ({ item }: { item: Message }) => {
+    const styles = createStyles(colors)
+
     return (
       <View
         style={[
@@ -521,6 +529,8 @@ export default function ChatScreen () {
     )
   }
 
+  const styles = createStyles(colors)
+
   // Loading state
   if (loading) {
     return (
@@ -530,14 +540,14 @@ export default function ChatScreen () {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Ionicons name='chevron-back' size={24} color='#333' />
+            <Ionicons name='chevron-back' size={24} color={colors.text} />
           </TouchableOpacity>
           <View style={styles.headerInfo}>
             <Text style={styles.headerTitle}>{getChatTitle()}</Text>
           </View>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color='#02537F' />
+          <ActivityIndicator size='large' color={colors.primary} />
           <Text style={styles.loadingText}>Loading messages...</Text>
         </View>
       </View>
@@ -557,7 +567,7 @@ export default function ChatScreen () {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Ionicons name='chevron-back' size={24} color='#333' />
+            <Ionicons name='chevron-back' size={24} color={colors.text} />
           </TouchableOpacity>
 
           <View style={styles.headerInfo}>
@@ -585,7 +595,7 @@ export default function ChatScreen () {
             <TextInput
               style={styles.textInput}
               placeholder='Type a message...'
-              placeholderTextColor='#94a3b8'
+              placeholderTextColor={colors.textSecondary}
               value={inputText}
               onChangeText={setInputText}
               onSubmitEditing={handleSubmitEditing}
@@ -609,9 +619,9 @@ export default function ChatScreen () {
             disabled={!inputText.trim() || sending}
           >
             {sending ? (
-              <ActivityIndicator size={16} color='#ffffff' />
+              <ActivityIndicator size={16} color={colors.background} />
             ) : (
-              <Ionicons name='send' size={20} color='#ffffff' />
+              <Ionicons name='send' size={20} color={colors.background} />
             )}
           </TouchableOpacity>
         </View>
@@ -623,331 +633,334 @@ export default function ChatScreen () {
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc'
-  },
-  keyboardView: {
-    flex: 1
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666666'
-  },
-  // Header Styles
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2
-  },
-  backButton: {
-    padding: 4,
-    marginRight: 8
-  },
-  headerInfo: {
-    flex: 1
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 2
-  },
-  // Messages List Styles
-  messagesList: {
-    flex: 1
-  },
-  messagesContent: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    flexGrow: 1
-  },
-  messageContainer: {
-    flexDirection: 'row',
-    marginBottom: 12,
-    maxWidth: '70%', // Reduced from 85% to give more space
-    alignSelf: 'flex-start' // Add this
-  },
-  currentUserMessage: {
-    alignSelf: 'flex-end',
-    flexDirection: 'row-reverse'
-  },
-  otherUserMessage: {
-    alignSelf: 'flex-start'
-  },
-  messageBubble: {
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    flex: 1, // Add this to allow proper expansion
-    minWidth: 80 // Increase minimum width
-  },
-  currentUserBubble: {
-    backgroundColor: '#02537F',
-    borderBottomRightRadius: 6
-  },
-  otherUserBubble: {
-    backgroundColor: '#ffffff',
-    borderBottomLeftRadius: 6,
-    borderWidth: 1,
-    borderColor: '#e2e8f0'
-  },
-  messageText: {
-    fontSize: 16,
-    lineHeight: 20,
-    marginBottom: 4,
-    textAlign: 'left', // Ensure proper alignment
-    includeFontPadding: false // Remove extra font padding
-  },
-  currentUserText: {
-    color: '#ffffff'
-  },
-  otherUserText: {
-    color: '#1e293b'
-  },
-  messageFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginTop: 2 // Add small margin
-  },
-  timestamp: {
-    fontSize: 11,
-    fontWeight: '500'
-  },
-  currentUserTimestamp: {
-    color: 'rgba(255, 255, 255, 0.7)'
-  },
-  otherUserTimestamp: {
-    color: '#64748b'
-  },
-  statusIcon: {
-    marginLeft: 4
-  },
-  // Mismatch Styles (minimal and matching app theme)
-  mismatchContainer: {
-    width: '100%'
-  },
-  mismatchHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12
-  },
-  mismatchTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginLeft: 6
-  },
-  mismatchDetails: {
-    marginBottom: 12
-  },
-  mismatchRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8
-  },
-  mismatchLabel: {
-    fontSize: 14,
-    color: '#64748b',
-    fontWeight: '500'
-  },
-  mismatchValue: {
-    fontSize: 14,
-    color: '#1e293b',
-    fontWeight: '600'
-  },
-  mismatchValueHighlight: {
-    fontSize: 16,
-    color: '#02537F',
-    fontWeight: '700'
-  },
-  mismatchMessage: {
-    fontSize: 14,
-    color: '#64748b',
-    marginBottom: 12,
-    lineHeight: 18
-  },
-  payNowButton: {
-    backgroundColor: '#02537F',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    alignItems: 'center',
-    alignSelf: 'flex-start'
-  },
-  payNowButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600'
-  },
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20
-  },
-  modalContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    width: '100%',
-    maxWidth: 400,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0'
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1e293b'
-  },
-  closeButton: {
-    padding: 4
-  },
-  modalContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 20
-  },
-  modalText: {
-    fontSize: 16,
-    color: '#64748b',
-    lineHeight: 22,
-    marginBottom: 20
-  },
-  chargeDetails: {
-    backgroundColor: '#f8fafc',
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e2e8f0'
-  },
-  chargeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8
-  },
-  chargeLabel: {
-    fontSize: 16,
-    color: '#64748b',
-    fontWeight: '500'
-  },
-  chargeAmount: {
-    fontSize: 18,
-    color: '#02537F',
-    fontWeight: '700'
-  },
-  chargeReason: {
-    fontSize: 14,
-    color: '#64748b',
-    fontStyle: 'italic',
-    marginTop: 4
-  },
-  modalActions: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    gap: 12
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    alignItems: 'center'
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    color: '#64748b',
-    fontWeight: '600'
-  },
-  proceedButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    backgroundColor: '#02537F',
-    alignItems: 'center'
-  },
-  proceedButtonDisabled: {
-    backgroundColor: '#94a3b8'
-  },
-  proceedButtonText: {
-    fontSize: 16,
-    color: '#ffffff',
-    fontWeight: '600'
-  },
-  // Input Area Styles
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 12,
-    borderTopWidth: 1,
-    borderTopColor: '#e2e8f0'
-  },
-  textInputContainer: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginRight: 8,
-    minHeight: 44
-  },
-  textInput: {
-    fontSize: 16,
-    color: '#1e293b',
-    minHeight: 20
-  },
-  sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  sendButtonActive: {
-    backgroundColor: '#02537F'
-  },
-  sendButtonInactive: {
-    backgroundColor: '#94a3b8'
-  }
-})
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.surface
+    },
+    keyboardView: {
+      flex: 1
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center'
+    },
+    loadingText: {
+      marginTop: 16,
+      fontSize: 16,
+      color: colors.textSecondary
+    },
+    // Header Styles
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      elevation: 2,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2
+    },
+    backButton: {
+      padding: 4,
+      marginRight: 8
+    },
+    headerInfo: {
+      flex: 1
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 2
+    },
+    // Messages List Styles
+    messagesList: {
+      flex: 1
+    },
+    messagesContent: {
+      paddingVertical: 16,
+      paddingHorizontal: 16,
+      flexGrow: 1
+    },
+    messageContainer: {
+      flexDirection: 'row',
+      marginBottom: 12,
+      maxWidth: '70%',
+      alignSelf: 'flex-start'
+    },
+    currentUserMessage: {
+      alignSelf: 'flex-end',
+      flexDirection: 'row-reverse'
+    },
+    otherUserMessage: {
+      alignSelf: 'flex-start'
+    },
+    messageBubble: {
+      borderRadius: 20,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      flex: 1,
+      minWidth: 80
+    },
+    currentUserBubble: {
+      backgroundColor: colors.primary,
+      borderBottomRightRadius: 6
+    },
+    otherUserBubble: {
+      backgroundColor: colors.background,
+      borderBottomLeftRadius: 6,
+      borderWidth: 1,
+      borderColor: colors.border
+    },
+    messageText: {
+      fontSize: 16,
+      lineHeight: 20,
+      marginBottom: 4,
+      textAlign: 'left',
+      includeFontPadding: false
+    },
+    currentUserText: {
+      color: colors.background
+    },
+    otherUserText: {
+      color: colors.text
+    },
+    messageFooter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      marginTop: 2
+    },
+    timestamp: {
+      fontSize: 11,
+      fontWeight: '500'
+    },
+    currentUserTimestamp: {
+      color: colors.background + 'B3' // 70% opacity
+    },
+    otherUserTimestamp: {
+      color: colors.textSecondary
+    },
+    statusIcon: {
+      marginLeft: 4
+    },
+    // Mismatch Styles
+    mismatchContainer: {
+      width: '100%'
+    },
+    mismatchHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12
+    },
+    mismatchTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginLeft: 6
+    },
+    mismatchDetails: {
+      marginBottom: 12
+    },
+    mismatchRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8
+    },
+    mismatchLabel: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      fontWeight: '500'
+    },
+    mismatchValue: {
+      fontSize: 14,
+      color: colors.text,
+      fontWeight: '600'
+    },
+    mismatchValueHighlight: {
+      fontSize: 16,
+      color: colors.primary,
+      fontWeight: '700'
+    },
+    mismatchMessage: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 12,
+      lineHeight: 18
+    },
+    payNowButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderRadius: 6,
+      alignItems: 'center',
+      alignSelf: 'flex-start'
+    },
+    payNowButtonText: {
+      color: colors.background,
+      fontSize: 14,
+      fontWeight: '600'
+    },
+    // Modal Styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20
+    },
+    modalContainer: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      width: '100%',
+      maxWidth: 400,
+      elevation: 10,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 8,
+      borderWidth: colors.background === '#000000' ? 1 : 0,
+      borderColor: colors.border
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text
+    },
+    closeButton: {
+      padding: 4
+    },
+    modalContent: {
+      paddingHorizontal: 20,
+      paddingVertical: 20
+    },
+    modalText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      lineHeight: 22,
+      marginBottom: 20
+    },
+    chargeDetails: {
+      backgroundColor: colors.surface,
+      padding: 16,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border
+    },
+    chargeRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8
+    },
+    chargeLabel: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      fontWeight: '500'
+    },
+    chargeAmount: {
+      fontSize: 18,
+      color: colors.primary,
+      fontWeight: '700'
+    },
+    chargeReason: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      fontStyle: 'italic',
+      marginTop: 4
+    },
+    modalActions: {
+      flexDirection: 'row',
+      paddingHorizontal: 20,
+      paddingBottom: 20,
+      gap: 12
+    },
+    cancelButton: {
+      flex: 1,
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center'
+    },
+    cancelButtonText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      fontWeight: '600'
+    },
+    proceedButton: {
+      flex: 1,
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+      alignItems: 'center'
+    },
+    proceedButtonDisabled: {
+      backgroundColor: colors.textSecondary
+    },
+    proceedButtonText: {
+      fontSize: 16,
+      color: colors.background,
+      fontWeight: '600'
+    },
+    // Input Area Styles
+    inputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      paddingBottom: Platform.OS === 'ios' ? 34 : 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border
+    },
+    textInputContainer: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: 25,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      marginRight: 8,
+      minHeight: 44
+    },
+    textInput: {
+      fontSize: 16,
+      color: colors.text,
+      minHeight: 20
+    },
+    sendButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    sendButtonActive: {
+      backgroundColor: colors.primary
+    },
+    sendButtonInactive: {
+      backgroundColor: colors.textSecondary
+    }
+  })

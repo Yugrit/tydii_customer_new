@@ -1,4 +1,4 @@
-// app/_layout.tsx - UPDATED VERSION (No API Fetching)
+// app/_layout.tsx - FIXED VERSION
 import {
   DarkTheme,
   DefaultTheme,
@@ -12,24 +12,29 @@ import React, { useEffect, useRef, useState } from 'react'
 import 'react-native-reanimated'
 import { Provider } from 'react-redux'
 
-import { useColorScheme } from '@/hooks/useColorScheme'
 import { userLoginState } from '@/Redux/slices/userSlices'
 import { getData_MMKV } from '@/services/StorageService'
 import store from '../Redux/Store'
 
 SplashScreen.preventAutoHideAsync()
 
-export default function RootLayout () {
+// Inner component that uses Redux hooks
+function AppContent () {
+  const { useColorScheme } = require('@/hooks/useColorScheme') // Import inside component
   const { colorScheme } = useColorScheme()
+
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf')
   })
+
+  useEffect(() => {
+    // FCMService.initialize()
+  }, [])
 
   const [authState, setAuthState] = useState<
     'loading' | 'authenticated' | 'unauthenticated'
   >('loading')
   const router = useRouter()
-
   const hasRun = useRef(false)
 
   useEffect(() => {
@@ -65,7 +70,7 @@ export default function RootLayout () {
           }
           return
         }
-        // Parse and load saved user data
+
         console.log('✅ Loading saved user data to Redux')
         if (!isCancelled) {
           store.dispatch(
@@ -128,15 +133,22 @@ export default function RootLayout () {
   }
 
   return (
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name='auth' options={{ headerShown: false }} />
+        <Stack.Screen name='(tabs)/(home)' options={{ headerShown: false }} />
+        <Stack.Screen name='+not-found' />
+      </Stack>
+      <StatusBar style='auto' />
+    </ThemeProvider>
+  )
+}
+
+// Root component with Provider
+export default function RootLayout () {
+  return (
     <Provider store={store}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name='auth' options={{ headerShown: false }} />
-          <Stack.Screen name='(tabs)/(home)' options={{ headerShown: false }} />
-          <Stack.Screen name='+not-found' />
-        </Stack>
-        <StatusBar style='auto' />
-      </ThemeProvider>
+      <AppContent />
     </Provider>
   )
 }

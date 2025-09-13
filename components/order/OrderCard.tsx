@@ -1,4 +1,5 @@
 import { OrderStatus, ServiceTypeEnum } from '@/enums'
+import { useThemeColors } from '@/hooks/useThemeColor'
 import { Star } from 'lucide-react-native'
 import React from 'react'
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
@@ -16,6 +17,8 @@ export default function OrderCard ({
   onCancel,
   onTrack
 }: any) {
+  const colors = useThemeColors()
+
   const renderStars = () => {
     const stars = []
     const fullStars = Math.floor(rating)
@@ -88,75 +91,78 @@ export default function OrderCard ({
     return trackableStatuses.includes(status as OrderStatus)
   }
 
-  // Function to get status badge styles based on order status
+  // Function to get status badge styles based on order status (theme-aware)
   const getStatusBadgeStyle = (status: string) => {
+    // Base opacity for dark mode adjustments
+    const isDark = colors.background === '#000000'
+
     switch (status) {
       case OrderStatus.PENDING:
         return {
-          backgroundColor: '#fff3cd',
-          textColor: '#856404'
+          backgroundColor: isDark ? '#664D03' : '#fff3cd',
+          textColor: isDark ? '#FFE69C' : '#856404'
         }
       case OrderStatus.CONFIRMED:
         return {
-          backgroundColor: '#E2FFF0',
-          textColor: '#079449'
+          backgroundColor: isDark ? '#0F3F23' : '#E2FFF0',
+          textColor: isDark ? '#75DD96' : '#079449'
         }
       case OrderStatus.PICKUP_SCHEDULED:
       case OrderStatus.PICKUP_CONFIRMED:
         return {
-          backgroundColor: '#cce5ff',
-          textColor: '#004085'
+          backgroundColor: isDark ? '#003366' : '#cce5ff',
+          textColor: isDark ? '#66B2FF' : '#004085'
         }
       case OrderStatus.PICKUP_RESCHEDULED:
         return {
-          backgroundColor: '#f8d7da',
-          textColor: '#721c24'
+          backgroundColor: isDark ? '#58151C' : '#f8d7da',
+          textColor: isDark ? '#F5B7B1' : '#721c24'
         }
       case OrderStatus.OUT_FOR_PICKUP:
         return {
-          backgroundColor: '#e2e3e5',
-          textColor: '#383d41'
+          backgroundColor: isDark ? '#2C2C2C' : '#e2e3e5',
+          textColor: isDark ? '#CCCCCC' : '#383d41'
         }
       case OrderStatus.PICKED_UP:
       case OrderStatus.AT_STORE:
         return {
-          backgroundColor: '#d4edda',
-          textColor: '#155724'
+          backgroundColor: isDark ? '#1E4A30' : '#d4edda',
+          textColor: isDark ? '#90EE90' : '#155724'
         }
       case OrderStatus.PROCESSING:
         return {
-          backgroundColor: '#e7f1ff',
-          textColor: '#084298'
+          backgroundColor: isDark ? '#1A365D' : '#e7f1ff',
+          textColor: isDark ? '#90CAF9' : '#084298'
         }
       case OrderStatus.DELAYED:
         return {
-          backgroundColor: '#f8d7da',
-          textColor: '#721c24'
+          backgroundColor: isDark ? '#58151C' : '#f8d7da',
+          textColor: isDark ? '#F5B7B1' : '#721c24'
         }
       case OrderStatus.READY_FOR_DELIVERY:
         return {
-          backgroundColor: '#cff4fc',
-          textColor: '#055160'
+          backgroundColor: isDark ? '#0F4A5C' : '#cff4fc',
+          textColor: isDark ? '#87CEEB' : '#055160'
         }
       case OrderStatus.OUT_FOR_DELIVERY:
         return {
-          backgroundColor: '#e2e3e5',
-          textColor: '#383d41'
+          backgroundColor: isDark ? '#2C2C2C' : '#e2e3e5',
+          textColor: isDark ? '#CCCCCC' : '#383d41'
         }
       case OrderStatus.DELIVERY_SCHEDULED:
         return {
-          backgroundColor: '#cce5ff',
-          textColor: '#004085'
+          backgroundColor: isDark ? '#003366' : '#cce5ff',
+          textColor: isDark ? '#66B2FF' : '#004085'
         }
       case OrderStatus.DELIVERED:
         return {
-          backgroundColor: '#d1e7dd',
-          textColor: '#0f5132'
+          backgroundColor: isDark ? '#0A3D1F' : '#d1e7dd',
+          textColor: isDark ? '#90EE90' : '#0f5132'
         }
       default:
         return {
-          backgroundColor: '#e9ecef',
-          textColor: '#495057'
+          backgroundColor: isDark ? '#2C2C2C' : '#e9ecef',
+          textColor: isDark ? '#CCCCCC' : '#495057'
         }
     }
   }
@@ -165,6 +171,8 @@ export default function OrderCard ({
   const serviceIcon = getServiceIcon(serviceType)
   const showCancelButton = shouldShowCancelButton(orderStatus)
   const showTrackButton = shouldShowTrackButton(orderStatus)
+
+  const styles = createStyles(colors)
 
   return (
     <View style={styles.card}>
@@ -268,179 +276,180 @@ export default function OrderCard ({
   )
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    padding: 16,
-    marginVertical: 8,
-    marginHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
-  },
-  header: {
-    flexDirection: 'row'
-  },
-  image: {
-    width: 100,
-    height: 80,
-    borderRadius: 8,
-    marginRight: 16,
-    backgroundColor: '#f0f0f0'
-  },
-  headerContent: {
-    flex: 1,
-    justifyContent: 'space-between'
-  },
-  orderId: {
-    fontSize: 14,
-    fontWeight: '100',
-    color: '#666666',
-    marginBottom: 4
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '100',
-    color: '#888888',
-    marginBottom: 2
-  },
-  laundryName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#063853',
-    marginBottom: 2
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  dottedSeparator: {
-    backgroundColor: 'transparent',
-    borderStyle: 'dotted',
-    borderTopWidth: 1,
-    borderTopColor: '#d0d0d0',
-    borderWidth: 0,
-    marginVertical: 16
-  },
-  serviceSection: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: 12
-  },
-  serviceIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: '#e8f4fd',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16
-  },
-  serviceIconText: {
-    fontSize: 20
-  },
-  serviceContent: {
-    flex: 1
-  },
-  serviceMainRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between'
-  },
-  serviceLeft: {
-    flex: 1
-  },
-  serviceRight: {
-    flex: 1,
-    alignItems: 'flex-end'
-  },
-  serviceLabel: {
-    fontSize: 16,
-    fontWeight: '100',
-    color: '#666666',
-    marginBottom: 2
-  },
-  serviceValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#063853'
-  },
-  weightText: {
-    fontSize: 14,
-    color: '#666666',
-    marginBottom: 4,
-    textAlign: 'right'
-  },
-  priceText: {
-    fontSize: 14,
-    color: '#666666',
-    textAlign: 'right'
-  },
-  colonValue: {
-    fontWeight: '700',
-    color: '#333333'
-  },
-  orderInfoSection: {
-    marginBottom: 5
-  },
-  orderInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: '#666666'
-  },
-  infoValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#333333'
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600'
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12
-  },
-  singleButtonRight: {
-    justifyContent: 'flex-end'
-  },
-  singleButtonLeft: {
-    justifyContent: 'flex-start'
-  },
-  button: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 6,
-    alignItems: 'center'
-  },
-  cancelButton: {
-    backgroundColor: '#DEEDF6'
-  },
-  cancelText: {
-    fontSize: 14,
-    color: '#02537F',
-    fontWeight: '500'
-  },
-  trackButton: {
-    backgroundColor: '#02537F'
-  },
-  trackText: {
-    fontSize: 14,
-    color: '#ffffff',
-    fontWeight: '500'
-  }
-})
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 16,
+      marginVertical: 8,
+      marginHorizontal: 16,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3
+    },
+    header: {
+      flexDirection: 'row'
+    },
+    image: {
+      width: 100,
+      height: 80,
+      borderRadius: 8,
+      marginRight: 16,
+      backgroundColor: colors.surface
+    },
+    headerContent: {
+      flex: 1,
+      justifyContent: 'space-between'
+    },
+    orderId: {
+      fontSize: 14,
+      fontWeight: '100',
+      color: colors.textSecondary,
+      marginBottom: 4
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: '100',
+      color: colors.textSecondary,
+      marginBottom: 2
+    },
+    laundryName: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.primary,
+      marginBottom: 2
+    },
+    ratingRow: {
+      flexDirection: 'row',
+      alignItems: 'center'
+    },
+    dottedSeparator: {
+      backgroundColor: 'transparent',
+      borderStyle: 'dotted',
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      borderWidth: 0,
+      marginVertical: 16
+    },
+    serviceSection: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      paddingHorizontal: 12
+    },
+    serviceIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 8,
+      backgroundColor: colors.light,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 16
+    },
+    serviceIconText: {
+      fontSize: 20
+    },
+    serviceContent: {
+      flex: 1
+    },
+    serviceMainRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between'
+    },
+    serviceLeft: {
+      flex: 1
+    },
+    serviceRight: {
+      flex: 1,
+      alignItems: 'flex-end'
+    },
+    serviceLabel: {
+      fontSize: 16,
+      fontWeight: '100',
+      color: colors.textSecondary,
+      marginBottom: 2
+    },
+    serviceValue: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.primary
+    },
+    weightText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 4,
+      textAlign: 'right'
+    },
+    priceText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'right'
+    },
+    colonValue: {
+      fontWeight: '700',
+      color: colors.text
+    },
+    orderInfoSection: {
+      marginBottom: 5
+    },
+    orderInfoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12
+    },
+    infoLabel: {
+      fontSize: 14,
+      color: colors.textSecondary
+    },
+    infoValue: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text
+    },
+    statusBadge: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20
+    },
+    statusText: {
+      fontSize: 12,
+      fontWeight: '600'
+    },
+    actionButtons: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: 12
+    },
+    singleButtonRight: {
+      justifyContent: 'flex-end'
+    },
+    singleButtonLeft: {
+      justifyContent: 'flex-start'
+    },
+    button: {
+      paddingVertical: 10,
+      paddingHorizontal: 20,
+      borderRadius: 6,
+      alignItems: 'center'
+    },
+    cancelButton: {
+      backgroundColor: colors.surface
+    },
+    cancelText: {
+      fontSize: 14,
+      color: colors.primary,
+      fontWeight: '500'
+    },
+    trackButton: {
+      backgroundColor: colors.primary
+    },
+    trackText: {
+      fontSize: 14,
+      color: colors.background,
+      fontWeight: '500'
+    }
+  })

@@ -1,3 +1,4 @@
+import { useThemeColors } from '@/hooks/useThemeColor'
 import { Edit3 } from 'lucide-react-native'
 import React, { useEffect, useState } from 'react'
 import {
@@ -14,6 +15,7 @@ import { useDispatch, useSelector } from 'react-redux'
 
 export default function ProfileInformationScreen () {
   const dispatch = useDispatch()
+  const colors = useThemeColors()
 
   // Get user data from Redux store
   const user = useSelector((state: any) => state.user.userData)
@@ -107,6 +109,8 @@ export default function ProfileInformationScreen () {
     }
   }
 
+  const styles = createStyles(colors)
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
@@ -123,7 +127,7 @@ export default function ProfileInformationScreen () {
             {/* Edit Button */}
             {!isEditMode && (
               <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-                <Edit3 size={20} color='#02537F' />
+                <Edit3 size={20} color={colors.primary} />
                 <Text style={styles.editButtonText}>Edit</Text>
               </TouchableOpacity>
             )}
@@ -156,6 +160,7 @@ export default function ProfileInformationScreen () {
               value={profileData.fullName}
               onChangeText={text => handleInputChange('fullName', text)}
               placeholder='Enter full name'
+              placeholderTextColor={colors.textSecondary}
               editable={isEditMode}
             />
           </View>
@@ -187,6 +192,7 @@ export default function ProfileInformationScreen () {
                 value={profileData.phone}
                 onChangeText={text => handleInputChange('phone', text)}
                 placeholder='Phone number'
+                placeholderTextColor={colors.textSecondary}
                 keyboardType='phone-pad'
                 editable={isEditMode}
               />
@@ -204,6 +210,7 @@ export default function ProfileInformationScreen () {
               value={profileData.email}
               onChangeText={text => handleInputChange('email', text)}
               placeholder='Enter email'
+              placeholderTextColor={colors.textSecondary}
               keyboardType='email-address'
               autoCapitalize='none'
               editable={isEditMode}
@@ -221,6 +228,7 @@ export default function ProfileInformationScreen () {
               value={profileData.zipCode}
               onChangeText={text => handleInputChange('zipCode', text)}
               placeholder='Enter zip code'
+              placeholderTextColor={colors.textSecondary}
               keyboardType='numeric'
               editable={isEditMode}
             />
@@ -373,231 +381,237 @@ export default function ProfileInformationScreen () {
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc'
-  },
-  content: {
-    paddingHorizontal: 16,
-    paddingVertical: 20
-  },
-  header: {
-    marginBottom: 30
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start'
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#333333'
-  },
-  titleAccent: {
-    color: '#02537F'
-  },
-  underline: {
-    width: 120,
-    height: 3,
-    backgroundColor: '#02537F',
-    marginTop: 8
-  },
-  editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#e5f3f8',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 6
-  },
-  editButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#02537F'
-  },
-  profileSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 30,
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
-  },
-  profileImageContainer: {
-    marginRight: 16
-  },
-  profileImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#e0e0e0'
-  },
-  profileInfo: {
-    flex: 1
-  },
-  profileName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333333',
-    marginBottom: 4
-  },
-  profileEmail: {
-    fontSize: 14,
-    color: '#666666'
-  },
-  formContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
-  },
-  inputGroup: {
-    marginBottom: 20
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333333',
-    marginBottom: 8
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#333333',
-    backgroundColor: '#f8f9fa'
-  },
-  textInputDisabled: {
-    backgroundColor: '#f5f5f5',
-    borderColor: '#e8e8e8',
-    color: '#888888'
-  },
-  textDisabled: {
-    color: '#888888'
-  },
-  phoneInputContainer: {
-    flexDirection: 'row',
-    gap: 8
-  },
-  countryCodeContainer: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    backgroundColor: '#f8f9fa',
-    width: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 12
-  },
-  countryCodeText: {
-    fontSize: 16,
-    color: '#333333',
-    fontWeight: '500'
-  },
-  phoneInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#333333',
-    backgroundColor: '#f8f9fa'
-  },
-  genderSection: {
-    marginTop: 10
-  },
-  genderOptions: {
-    flexDirection: 'row',
-    gap: 20
-  },
-  genderOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8
-  },
-  genderOptionSelected: {
-    // Add any selected state styling if needed
-  },
-  genderOptionDisabled: {
-    opacity: 0.6
-  },
-  radioButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#02537F',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8
-  },
-  radioButtonSelected: {
-    borderColor: '#02537F'
-  },
-  radioButtonDisabled: {
-    borderColor: '#cccccc'
-  },
-  radioButtonInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#02537F'
-  },
-  radioButtonInnerDisabled: {
-    backgroundColor: '#cccccc'
-  },
-  genderText: {
-    fontSize: 16,
-    color: '#666666'
-  },
-  genderTextSelected: {
-    color: '#333333',
-    fontWeight: '500'
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 16
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 8,
-    backgroundColor: '#e5f3f8',
-    alignItems: 'center'
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#02537F'
-  },
-  updateButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 8,
-    backgroundColor: '#02537F',
-    alignItems: 'center'
-  },
-  updateButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#ffffff'
-  }
-})
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.surface
+    },
+    content: {
+      paddingHorizontal: 16,
+      paddingVertical: 20
+    },
+    header: {
+      marginBottom: 30
+    },
+    headerContent: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start'
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.text
+    },
+    titleAccent: {
+      color: colors.primary
+    },
+    underline: {
+      width: 120,
+      height: 3,
+      backgroundColor: colors.primary,
+      marginTop: 8
+    },
+    editButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.light,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 8,
+      gap: 6
+    },
+    editButtonText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.primary
+    },
+    profileSection: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 30,
+      backgroundColor: colors.background,
+      padding: 16,
+      borderRadius: 12,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      borderWidth: colors.background === '#000000' ? 1 : 0,
+      borderColor: colors.border
+    },
+    profileImageContainer: {
+      marginRight: 16
+    },
+    profileImage: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: colors.surface
+    },
+    profileInfo: {
+      flex: 1
+    },
+    profileName: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 4
+    },
+    profileEmail: {
+      fontSize: 14,
+      color: colors.textSecondary
+    },
+    formContainer: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: 20,
+      marginBottom: 30,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      borderWidth: colors.background === '#000000' ? 1 : 0,
+      borderColor: colors.border
+    },
+    inputGroup: {
+      marginBottom: 20
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: colors.text,
+      marginBottom: 8
+    },
+    textInput: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 16,
+      color: colors.text,
+      backgroundColor: colors.surface
+    },
+    textInputDisabled: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      color: colors.textSecondary,
+      opacity: 0.7
+    },
+    textDisabled: {
+      color: colors.textSecondary
+    },
+    phoneInputContainer: {
+      flexDirection: 'row',
+      gap: 8
+    },
+    countryCodeContainer: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      backgroundColor: colors.surface,
+      width: 80,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 12
+    },
+    countryCodeText: {
+      fontSize: 16,
+      color: colors.text,
+      fontWeight: '500'
+    },
+    phoneInput: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 16,
+      color: colors.text,
+      backgroundColor: colors.surface
+    },
+    genderSection: {
+      marginTop: 10
+    },
+    genderOptions: {
+      flexDirection: 'row',
+      gap: 20
+    },
+    genderOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 8
+    },
+    genderOptionSelected: {
+      // Add any selected state styling if needed
+    },
+    genderOptionDisabled: {
+      opacity: 0.6
+    },
+    radioButton: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 8
+    },
+    radioButtonSelected: {
+      borderColor: colors.primary
+    },
+    radioButtonDisabled: {
+      borderColor: colors.border
+    },
+    radioButtonInner: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.primary
+    },
+    radioButtonInnerDisabled: {
+      backgroundColor: colors.border
+    },
+    genderText: {
+      fontSize: 16,
+      color: colors.textSecondary
+    },
+    genderTextSelected: {
+      color: colors.text,
+      fontWeight: '500'
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      gap: 16
+    },
+    cancelButton: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 8,
+      backgroundColor: colors.light,
+      alignItems: 'center'
+    },
+    cancelButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.primary
+    },
+    updateButton: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+      alignItems: 'center'
+    },
+    updateButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.background
+    }
+  })

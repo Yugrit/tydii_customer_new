@@ -1,5 +1,6 @@
 // components/OrderScreenWrapper.tsx
 import { RootState } from '@/Redux/Store'
+import { useThemeColors } from '@/hooks/useThemeColor'
 import React from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { useSelector } from 'react-redux'
@@ -12,9 +13,12 @@ interface OrderScreenWrapperProps {
 export default function OrderScreenWrapper ({
   children
 }: OrderScreenWrapperProps) {
+  const colors = useThemeColors()
   const { serviceType, currentStep, totalSteps } = useSelector(
     (state: RootState) => state.order
   )
+
+  const styles = createStyles(colors)
 
   return (
     <ScrollView
@@ -39,27 +43,30 @@ export default function OrderScreenWrapper ({
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9f9f9'
-  },
-  contentContainer: {
-    flexGrow: 1,
-    paddingBottom: 20
-  },
-  stickyHeader: {
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.surface
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5
-  },
-  content: {
-    flex: 1
-  }
-})
+    contentContainer: {
+      flexGrow: 1,
+      paddingBottom: 20
+    },
+    stickyHeader: {
+      backgroundColor: colors.background,
+      shadowColor: colors.text,
+      shadowOffset: {
+        width: 0,
+        height: 2
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 5,
+      borderBottomWidth: colors.background === '#000000' ? 1 : 0,
+      borderBottomColor: colors.border
+    },
+    content: {
+      flex: 1
+    }
+  })

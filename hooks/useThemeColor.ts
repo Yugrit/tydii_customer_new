@@ -14,14 +14,14 @@ const lightTheme = {
 }
 
 const darkTheme = {
-  background: '#000000',
+  background: '#121212',
   surface: '#1A1A1A',
   primary: '#3498db',
   secondary: '#2980b9',
   text: '#FFFFFF',
   textSecondary: '#CCCCCC',
   border: '#333333',
-  light: '#E6F2F7',
+  light: '#262626',
   notification: '#FF6B7A'
 }
 

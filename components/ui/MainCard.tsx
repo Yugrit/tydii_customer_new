@@ -3,6 +3,7 @@ import { useThemeColors } from '@/hooks/useThemeColor'
 import { LinearGradient } from 'expo-linear-gradient'
 import { ArrowRight } from 'lucide-react-native'
 import React, { useMemo, useRef } from 'react'
+import type { ColorValue } from 'react-native'
 import {
   Animated,
   StyleSheet,
@@ -47,6 +48,11 @@ export default function ServiceCard ({
     }).start()
   }
 
+  const gradientColors: [ColorValue, ColorValue] =
+    colors.background === '#000000'
+      ? ['#4A9EFF', '#3498DB'] // Dark mode gradient
+      : ['#0FAEEF', '#1876A9'] // Light mode gradient
+
   return (
     <View style={styles.cardWrapper}>
       <View style={styles.card}>
@@ -60,7 +66,7 @@ export default function ServiceCard ({
             allowFontScaling={false}
             ellipsizeMode='tail'
           >
-            {title} {/* Add space to prevent cutoff */}
+            {title}
           </Text>
 
           <Text
@@ -72,7 +78,7 @@ export default function ServiceCard ({
             allowFontScaling={false}
             ellipsizeMode='tail'
           >
-            {description} {/* Add space to prevent cutoff */}
+            {description}
           </Text>
 
           {button && (
@@ -92,7 +98,7 @@ export default function ServiceCard ({
                 allowFontScaling={false}
                 ellipsizeMode='tail'
               >
-                {buttonText} {/* Add space to prevent cutoff */}
+                {buttonText}
               </Text>
               <Animated.View
                 style={{
@@ -100,7 +106,7 @@ export default function ServiceCard ({
                 }}
               >
                 <LinearGradient
-                  colors={['#0FAEEF', '#1876A9']}
+                  colors={gradientColors}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.iconContainer}
@@ -129,7 +135,10 @@ const createStyles = (colors: any) =>
       paddingTop: 20,
       marginHorizontal: 5,
       flex: 1,
-      minHeight: 120
+      minHeight: 120,
+      // Add subtle border for dark mode
+      borderWidth: colors.background === '#121212' ? 0.4 : 0,
+      borderColor: colors.light
     },
     content: {
       alignItems: 'center',
@@ -143,10 +152,10 @@ const createStyles = (colors: any) =>
       marginBottom: 5,
       textAlign: 'center',
       paddingHorizontal: 10,
-      paddingRight: 6, // Extra right padding to prevent cutoff
+      paddingRight: 6,
       lineHeight: 34,
       includeFontPadding: false,
-      flexShrink: 1 // Allow text to shrink properly
+      flexShrink: 1
     },
     description: {
       fontSize: 12,
@@ -155,10 +164,10 @@ const createStyles = (colors: any) =>
       lineHeight: 20,
       marginBottom: 14,
       paddingHorizontal: 15,
-      paddingRight: 8, // Extra right padding to prevent cutoff
+      paddingRight: 8,
       includeFontPadding: false,
       flex: 1,
-      flexShrink: 1 // Allow text to shrink properly
+      flexShrink: 1
     },
     button: {
       backgroundColor: colors.background,
@@ -166,13 +175,13 @@ const createStyles = (colors: any) =>
       alignItems: 'center',
       justifyContent: 'center',
       paddingVertical: 10,
-      paddingHorizontal: 18, // Increase horizontal padding
+      paddingHorizontal: 18,
       borderRadius: 30,
       minWidth: 160,
-      borderColor: '#AEE0F5',
+      borderColor: colors.border,
       borderWidth: 1,
       elevation: 2,
-      shadowColor: '#000',
+      shadowColor: colors.text,
       shadowOffset: {
         width: 0,
         height: 1
@@ -185,19 +194,18 @@ const createStyles = (colors: any) =>
       color: colors.textSecondary,
       fontSize: 15,
       fontWeight: '600',
-      marginRight: 12, // Increase margin
+      marginRight: 12,
       textAlign: 'center',
       includeFontPadding: false,
-      paddingRight: 4, // Extra right padding to prevent cutoff
-      flexShrink: 1 // Allow text to shrink properly
+      paddingRight: 4,
+      flexShrink: 1
     },
     iconContainer: {
-      backgroundColor: colors.primary,
       borderRadius: 12,
       width: 24,
       height: 24,
       justifyContent: 'center',
       alignItems: 'center',
-      flexShrink: 0 // Prevent icon from shrinking
+      flexShrink: 0
     }
   })

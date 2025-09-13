@@ -1,16 +1,19 @@
 // hooks/useColorScheme.ts
-import { getData_MMKV, storeData_MMKV } from '@/services/StorageService'
-import { useState } from 'react'
+import {
+  ColorScheme,
+  setThemePreference,
+  toggleTheme
+} from '@/Redux/slices/themeSlice'
+import { RootState } from '@/Redux/Store'
 import { useColorScheme as useNativeColorScheme } from 'react-native'
-
-export type ColorScheme = 'light' | 'dark' | 'auto'
+import { useDispatch, useSelector } from 'react-redux'
 
 export function useColorScheme () {
+  const dispatch = useDispatch()
   const systemColorScheme = useNativeColorScheme()
-  const [themePreference, setThemePreference] = useState<ColorScheme>(() => {
-    // Initialize from MMKV storage
-    return (getData_MMKV('theme') as ColorScheme) ?? 'auto'
-  })
+  const themePreference = useSelector(
+    (state: RootState) => state.theme.themePreference
+  )
 
   const currentTheme =
     themePreference === 'auto'
@@ -18,16 +21,22 @@ export function useColorScheme () {
       : (themePreference as 'light' | 'dark')
 
   const setColorScheme = (scheme: ColorScheme) => {
-    setThemePreference(scheme)
-    storeData_MMKV('theme')
+    dispatch(setThemePreference(scheme))
+  }
+
+  const toggleThemeMode = () => {
+    dispatch(toggleTheme())
   }
 
   return {
     colorScheme: currentTheme,
     themePreference,
     setColorScheme,
+    toggleTheme: toggleThemeMode,
     isSystemTheme: themePreference === 'auto',
     isDark: currentTheme === 'dark',
     isLight: currentTheme === 'light'
   }
 }
+
+export { ColorScheme }

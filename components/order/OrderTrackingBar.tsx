@@ -1,4 +1,5 @@
 import { OrderStatus } from '@/enums'
+import { useThemeColors } from '@/hooks/useThemeColor'
 import { Calendar, CheckCircle, Cog, Package, Truck } from 'lucide-react-native'
 import React, { useEffect, useRef } from 'react'
 import { Animated, StyleSheet, View } from 'react-native'
@@ -10,6 +11,8 @@ interface OrderProgressBarProps {
 export default function OrderProgressBar ({
   currentStatus
 }: OrderProgressBarProps) {
+  const colors = useThemeColors()
+
   // Define the 5 steps with their respective icons and labels
   const steps = [
     { key: OrderStatus.CONFIRMED, icon: Calendar, label: 'Scheduled' },
@@ -57,6 +60,22 @@ export default function OrderProgressBar ({
     })
   }, [currentStepIndex])
 
+  const styles = createStyles(colors)
+
+  // Theme-aware colors
+  const getProgressColors = () => {
+    return {
+      active: colors.primary,
+      completed: '#10B981', // Keep success green universal
+      inactive: colors.border,
+      iconActive: colors.background,
+      iconCompleted: '#ffffff',
+      iconInactive: colors.textSecondary
+    }
+  }
+
+  const progressColors = getProgressColors()
+
   return (
     <View style={styles.container}>
       <View style={styles.progressContainer}>
@@ -65,12 +84,19 @@ export default function OrderProgressBar ({
           const isCompleted = index < currentStepIndex
           const IconComponent = step.icon
 
-          // Interpolate background color based on progress
-          const backgroundColor = progressAnimation.interpolate({
-            inputRange: [index - 0.5, index],
-            outputRange: ['#E5E7EB', '#10B981'],
-            extrapolate: 'clamp'
-          })
+          // Get background color based on state
+          const getBackgroundColor = () => {
+            if (isCompleted) return progressColors.completed
+            if (isActive) return progressColors.active
+            return progressColors.inactive
+          }
+
+          // Get icon color based on state
+          const getIconColor = () => {
+            if (isCompleted) return progressColors.iconCompleted
+            if (isActive) return progressColors.iconActive
+            return progressColors.iconInactive
+          }
 
           return (
             <React.Fragment key={step.key}>
@@ -80,16 +106,12 @@ export default function OrderProgressBar ({
                   style={[
                     styles.circle,
                     {
-                      backgroundColor:
-                        isCompleted || isActive ? '#10B981' : '#E5E7EB',
+                      backgroundColor: getBackgroundColor(),
                       transform: [{ scale: scaleAnimations[index] }]
                     }
                   ]}
                 >
-                  <IconComponent
-                    size={18}
-                    color={isCompleted || isActive ? '#ffffff' : '#9CA3AF'}
-                  />
+                  <IconComponent size={18} color={getIconColor()} />
                 </Animated.View>
 
                 {/* Show label only for active status */}
@@ -125,7 +147,11 @@ export default function OrderProgressBar ({
                           inputRange: [index, index + 1],
                           outputRange: ['0%', '100%'],
                           extrapolate: 'clamp'
-                        })
+                        }),
+                        backgroundColor:
+                          index < currentStepIndex
+                            ? progressColors.completed
+                            : progressColors.active
                       }
                     ]}
                   />
@@ -139,57 +165,63 @@ export default function OrderProgressBar ({
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 25,
-    paddingVertical: 10
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between'
-  },
-  stepWrapper: {
-    alignItems: 'center',
-    flex: 1
-  },
-  circle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#E5E7EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1
-  },
-  progressLineContainer: {
-    flex: 1,
-    height: 3,
-    marginHorizontal: 8,
-    marginTop: 20,
-    position: 'relative'
-  },
-  progressLineBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 3,
-    backgroundColor: '#E5E7EB'
-  },
-  progressLineFill: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    height: 3,
-    backgroundColor: '#10B981'
-  },
-  activeLabel: {
-    marginTop: 8,
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#10B981',
-    textAlign: 'center',
-    includeFontPadding: false
-  }
-})
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      paddingHorizontal: 25,
+      paddingVertical: 10,
+      backgroundColor: colors.background
+    },
+    progressContainer: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between'
+    },
+    stepWrapper: {
+      alignItems: 'center',
+      flex: 1
+    },
+    circle: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1,
+      elevation: 2,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2
+    },
+    progressLineContainer: {
+      flex: 1,
+      height: 3,
+      marginHorizontal: 8,
+      marginTop: 20,
+      position: 'relative'
+    },
+    progressLineBackground: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 3,
+      backgroundColor: colors.border
+    },
+    progressLineFill: {
+      backgroundColor: '#10B981',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      height: 3
+    },
+    activeLabel: {
+      marginTop: 8,
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.primary,
+      textAlign: 'center',
+      includeFontPadding: false
+    }
+  })

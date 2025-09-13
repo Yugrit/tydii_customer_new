@@ -1,5 +1,6 @@
 import ServiceCard from '@/components/ui/MainCard'
 import StoreCard from '@/components/ui/storeCard'
+import { useThemeColors } from '@/hooks/useThemeColor'
 import ApiService from '@/services/ApiService'
 import { getData_MMKV } from '@/services/StorageService'
 import { jwtDecode } from 'jwt-decode'
@@ -48,6 +49,7 @@ interface JWTPayload {
 }
 
 export default function FavouriteScreen () {
+  const colors = useThemeColors()
   const [laundryStores, setLaundryStores] = useState<LaundryStore[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -352,6 +354,8 @@ export default function FavouriteScreen () {
     ))
   }
 
+  const styles = createStyles(colors)
+
   // Loading state
   if (loading) {
     return (
@@ -362,7 +366,7 @@ export default function FavouriteScreen () {
           button={false}
         />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color='#02537F' />
+          <ActivityIndicator size='large' color={colors.primary} />
           <Text style={styles.loadingText}>Loading favourite stores...</Text>
         </View>
       </View>
@@ -428,7 +432,7 @@ export default function FavouriteScreen () {
             disabled={loadingMore}
           >
             {loadingMore ? (
-              <ActivityIndicator size='small' color='#02537F' />
+              <ActivityIndicator size='small' color={colors.primary} />
             ) : (
               <Text style={styles.loadMoreText}>Load More Stores</Text>
             )}
@@ -439,94 +443,95 @@ export default function FavouriteScreen () {
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    marginVertical: 10,
-    backgroundColor: '#f8f9fa'
-  },
-  scrollView: {
-    marginVertical: 10,
-    flex: 1
-  },
-  storesContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 20
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 16 // Consistent gap between cards
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 50
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666666',
-    textAlign: 'center'
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingTop: 50
-  },
-  errorText: {
-    fontSize: 18,
-    color: '#dc3545',
-    textAlign: 'center',
-    fontWeight: '600',
-    marginBottom: 8
-  },
-  errorSubText: {
-    fontSize: 14,
-    color: '#666666',
-    textAlign: 'center'
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingTop: 50
-  },
-  emptyTitle: {
-    fontSize: 20,
-    color: '#333333',
-    textAlign: 'center',
-    fontWeight: '700',
-    marginBottom: 12
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666666',
-    textAlign: 'center',
-    lineHeight: 24
-  },
-  loadMoreContainer: {
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20
-  },
-  loadMoreButton: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#02537F',
-    minWidth: 150,
-    alignItems: 'center'
-  },
-  loadMoreText: {
-    color: '#02537F',
-    fontSize: 16,
-    fontWeight: '600'
-  }
-})
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      marginVertical: 10,
+      backgroundColor: colors.surface
+    },
+    scrollView: {
+      marginVertical: 10,
+      flex: 1
+    },
+    storesContainer: {
+      paddingHorizontal: 16,
+      paddingTop: 16,
+      paddingBottom: 20
+    },
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginVertical: 16 // Consistent gap between cards
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingTop: 50
+    },
+    loadingText: {
+      marginTop: 16,
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center'
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 32,
+      paddingTop: 50
+    },
+    errorText: {
+      fontSize: 18,
+      color: colors.notification,
+      textAlign: 'center',
+      fontWeight: '600',
+      marginBottom: 8
+    },
+    errorSubText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center'
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 32,
+      paddingTop: 50
+    },
+    emptyTitle: {
+      fontSize: 20,
+      color: colors.text,
+      textAlign: 'center',
+      fontWeight: '700',
+      marginBottom: 12
+    },
+    emptyText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 24
+    },
+    loadMoreContainer: {
+      alignItems: 'center',
+      marginTop: 20,
+      marginBottom: 20
+    },
+    loadMoreButton: {
+      backgroundColor: colors.background,
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      minWidth: 150,
+      alignItems: 'center'
+    },
+    loadMoreText: {
+      color: colors.primary,
+      fontSize: 16,
+      fontWeight: '600'
+    }
+  })

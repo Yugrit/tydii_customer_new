@@ -1,5 +1,6 @@
 // components/order/forms/TailoringForm.tsx
 import { ServiceTypeEnum } from '@/enums'
+import { useThemeColors } from '@/hooks/useThemeColor'
 import {
   updateSelectedClothes,
   updateStorePrices
@@ -29,13 +30,17 @@ const CategorySelector = ({
   selected,
   onSelect,
   categories,
-  loading
+  loading,
+  colors
 }: {
   selected: string
   onSelect: (category: string) => void
   categories: string[]
   loading: boolean
+  colors: any
 }) => {
+  const styles = createCategorySelectorStyles(colors)
+
   if (loading) {
     return (
       <View style={styles.categoryContainer}>
@@ -73,13 +78,16 @@ const CategorySelector = ({
 const TailoringTypeDropdown = ({
   selected,
   options,
-  onSelect
+  onSelect,
+  colors
 }: {
   selected: string
   options: string[]
   onSelect: (type: string) => void
+  colors: any
 }) => {
   const [showModal, setShowModal] = useState(false)
+  const styles = createDropdownStyles(colors)
 
   return (
     <View style={styles.tailoringDropdownContainer}>
@@ -139,7 +147,8 @@ const TailoringItemRow = ({
   onTailoringTypeChange,
   tailoringOptions,
   categories,
-  categoriesLoading
+  categoriesLoading,
+  colors
 }: {
   label: string
   item: { category: string; tailoringType: string }
@@ -148,7 +157,10 @@ const TailoringItemRow = ({
   tailoringOptions: string[]
   categories: string[]
   categoriesLoading: boolean
+  colors: any
 }) => {
+  const styles = createTailoringItemStyles(colors)
+
   return (
     <View style={styles.tailoringItemContainer}>
       <View style={styles.headerRow}>
@@ -157,6 +169,7 @@ const TailoringItemRow = ({
           selected={item.tailoringType}
           options={tailoringOptions}
           onSelect={onTailoringTypeChange}
+          colors={colors}
         />
       </View>
 
@@ -166,6 +179,7 @@ const TailoringItemRow = ({
           onSelect={onCategoryChange}
           categories={categories}
           loading={categoriesLoading}
+          colors={colors}
         />
       </View>
     </View>
@@ -179,8 +193,9 @@ export default function TailoringForm ({
   onErrorsChange
 }: TailoringFormProps) {
   const dispatch = useDispatch()
+  const colors = useThemeColors()
 
-  // NEW: Get store flow data from Redux
+  // Get store flow data from Redux
   const { isStoreFlow, orderData } = useSelector(
     (state: RootState) => state.order
   )
@@ -203,7 +218,7 @@ export default function TailoringForm ({
     )
   }, [storePrices])
 
-  // UPDATED: Conditional fetch based on store flow
+  // Conditional fetch based on store flow
   useEffect(() => {
     const fetchAllDropdownData = async () => {
       try {
@@ -450,6 +465,8 @@ export default function TailoringForm ({
   const defaultCategory =
     clothCategories.length > 0 ? clothCategories[0] : 'Mens'
 
+  const styles = createMainStyles(colors)
+
   // Show loading state
   if (loading) {
     return (
@@ -499,6 +516,7 @@ export default function TailoringForm ({
             tailoringOptions={tailoringTypes} // Dynamic tailoring types from API
             categories={clothCategories} // Dynamic categories from API
             categoriesLoading={false}
+            colors={colors}
           />
         ))}
       </View>
@@ -510,156 +528,179 @@ export default function TailoringForm ({
   )
 }
 
-const styles = StyleSheet.create({
-  inputContainer: {
-    paddingHorizontal: 20
-  },
-  tailoringSection: {},
-  tailoringItemContainer: {
-    marginBottom: 20,
-    paddingBottom: 2,
-    paddingHorizontal: 2,
-    backgroundColor: '#F6F6F6'
-  },
-  headerRow: {
-    paddingHorizontal: 5,
-    paddingVertical: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between'
-  },
-  clothingLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
-    flex: 1
-  },
-  tailoringControls: {
-    backgroundColor: 'white',
-    padding: 10,
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
+// Main styles
+const createMainStyles = (colors: any) =>
+  StyleSheet.create({
+    inputContainer: {
+      paddingHorizontal: 20,
+      backgroundColor: colors.background
+    },
+    tailoringSection: {},
+    loadingText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      padding: 20,
+      fontStyle: 'italic'
+    },
+    errorContainer: {
+      marginBottom: 10,
+      padding: 10,
+      backgroundColor: colors.notification + '20',
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.notification + '50'
+    },
+    errorText: {
+      fontSize: 12,
+      color: colors.notification,
+      marginLeft: 4
+    }
+  })
 
-  // Category Selector Styles
-  categoryContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    flex: 1
-  },
-  categoryButton: {
-    borderWidth: 1,
-    borderColor: '#008ECC',
-    borderRadius: 16,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    backgroundColor: 'transparent'
-  },
-  categoryButtonSelected: {
-    backgroundColor: '#e6f3ff'
-  },
-  categoryText: {
-    fontSize: 14,
-    color: '#008ECC',
-    fontWeight: '500'
-  },
-  categoryTextSelected: {
-    color: '#0056b3',
-    fontWeight: '600'
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    padding: 20,
-    fontStyle: 'italic'
-  },
+// Category Selector styles
+const createCategorySelectorStyles = (colors: any) =>
+  StyleSheet.create({
+    categoryContainer: {
+      flexDirection: 'row',
+      gap: 8,
+      flex: 1
+    },
+    categoryButton: {
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderRadius: 16,
+      paddingVertical: 6,
+      paddingHorizontal: 14,
+      backgroundColor: 'transparent'
+    },
+    categoryButtonSelected: {
+      backgroundColor: colors.light
+    },
+    categoryText: {
+      fontSize: 14,
+      color: colors.primary,
+      fontWeight: '500'
+    },
+    categoryTextSelected: {
+      color: colors.primary,
+      fontWeight: '600'
+    },
+    loadingText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      padding: 20,
+      fontStyle: 'italic'
+    }
+  })
 
-  // Tailoring Dropdown Styles
-  tailoringDropdownContainer: {
-    width: 150
-  },
-  tailoringDropdown: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: 'white',
-    minHeight: 40
-  },
-  tailoringDropdownText: {
-    fontSize: 14,
-    color: '#666',
-    flex: 1
-  },
-  dropdownArrow: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 8
-  },
+// Tailoring Item styles
+const createTailoringItemStyles = (colors: any) =>
+  StyleSheet.create({
+    tailoringItemContainer: {
+      marginBottom: 20,
+      paddingBottom: 2,
+      paddingHorizontal: 2,
+      backgroundColor: colors.surface
+    },
+    headerRow: {
+      paddingHorizontal: 5,
+      paddingVertical: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between'
+    },
+    clothingLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.text,
+      flex: 1
+    },
+    tailoringControls: {
+      backgroundColor: colors.background,
+      padding: 10,
+      flexDirection: 'row',
+      alignItems: 'center'
+    }
+  })
 
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  dropdownModal: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    width: 300,
-    maxHeight: 400,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    textAlign: 'center'
-  },
-  dropdownOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
-  },
-  dropdownOptionText: {
-    fontSize: 16,
-    color: '#333',
-    flex: 1
-  },
-  selectedIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#008ECC'
-  },
+// Dropdown styles
+const createDropdownStyles = (colors: any) =>
+  StyleSheet.create({
+    tailoringDropdownContainer: {
+      width: 150
+    },
+    tailoringDropdown: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      backgroundColor: colors.background,
+      minHeight: 40
+    },
+    tailoringDropdownText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      flex: 1
+    },
+    dropdownArrow: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginLeft: 8
+    },
 
-  // Error Styles
-  errorContainer: {
-    marginBottom: 10,
-    padding: 10,
-    backgroundColor: '#ffebee',
-    borderRadius: 8
-  },
-  errorText: {
-    fontSize: 12,
-    color: 'red',
-    marginLeft: 4
-  }
-})
+    // Modal Styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+      justifyContent: 'center',
+      alignItems: 'center'
+    },
+    dropdownModal: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      width: 300,
+      maxHeight: 400,
+      elevation: 10,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      borderWidth: colors.background === '#000000' ? 1 : 0,
+      borderColor: colors.border
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      padding: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      textAlign: 'center'
+    },
+    dropdownOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border
+    },
+    dropdownOptionText: {
+      fontSize: 16,
+      color: colors.text,
+      flex: 1
+    },
+    selectedIndicator: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.primary
+    }
+  })

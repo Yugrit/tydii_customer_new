@@ -10,7 +10,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import {
   FlatList,
   Image,
-  Linking, // NEW: Added for opening external URLs
+  Linking,
   Modal,
   ScrollView,
   StyleSheet,
@@ -47,7 +47,13 @@ interface Coupon {
   maxDiscount?: number
 }
 
-const ServiceIcon = ({ category }: { category: string }) => {
+const ServiceIcon = ({
+  category,
+  colors
+}: {
+  category: string
+  colors: any
+}) => {
   const getIcon = () => {
     const categoryLower = category.toLowerCase()
 
@@ -68,6 +74,8 @@ const ServiceIcon = ({ category }: { category: string }) => {
     return '👕' // default
   }
 
+  const styles = createServiceIconStyles(colors)
+
   return (
     <View style={styles.serviceIcon}>
       <Text style={styles.serviceIconText}>{getIcon()}</Text>
@@ -75,10 +83,15 @@ const ServiceIcon = ({ category }: { category: string }) => {
   )
 }
 
-const OrderItem = ({ item }: { item: any }) => {
+const OrderItem = ({ item, colors }: { item: any; colors: any }) => {
+  const styles = createOrderItemStyles(colors)
+
   return (
     <View style={styles.orderItemRow}>
-      <ServiceIcon category={item.item_name || item.category || 'cloth'} />
+      <ServiceIcon
+        category={item.item_name || item.category || 'cloth'}
+        colors={colors}
+      />
       <View style={styles.itemInfo}>
         <Text style={styles.itemName}>{item.item_name || item.category}</Text>
         <Text style={styles.itemWeight}>
@@ -98,7 +111,7 @@ const OrderItem = ({ item }: { item: any }) => {
   )
 }
 
-const StoreInfo = ({ store }: { store: any }) => {
+const StoreInfo = ({ store, colors }: { store: any; colors: any }) => {
   const renderStars = () => {
     const stars = []
     const rating = store.rating || 4.5
@@ -118,6 +131,8 @@ const StoreInfo = ({ store }: { store: any }) => {
 
     return stars
   }
+
+  const styles = createStoreInfoStyles(colors)
 
   return (
     <View style={styles.storeContainer}>
@@ -144,13 +159,17 @@ const PaymentConfirmationModal = ({
   visible,
   onCancel,
   onConfirm,
-  total
+  total,
+  colors
 }: {
   visible: boolean
   onCancel: () => void
   onConfirm: () => void
   total: number
+  colors: any
 }) => {
+  const styles = createModalStyles(colors)
+
   return (
     <Modal
       visible={visible}
@@ -194,7 +213,8 @@ const CouponSelectionModal = ({
   onSelectCoupon,
   onCancel,
   onApply,
-  loading
+  loading,
+  colors
 }: {
   visible: boolean
   coupons: Coupon[]
@@ -203,7 +223,10 @@ const CouponSelectionModal = ({
   onCancel: () => void
   onApply: () => void
   loading: boolean
+  colors: any
 }) => {
+  const styles = createCouponModalStyles(colors)
+
   const renderCouponItem = ({ item }: { item: Coupon }) => (
     <TouchableOpacity
       style={[
@@ -388,12 +411,12 @@ export default function ConfirmOrderForm ({
             color: 'white'
           },
           disabledButtonText: {
-            color: 'gray'
+            color: colors.surface
           },
           iconStyle: {
             backgroundColor: 'white',
             padding: 10,
-            borderRadius: 50
+            borderRadius: 50 // Use number instead of '50%' for React Native
           }
         }),
       [colors]
@@ -419,7 +442,7 @@ export default function ConfirmOrderForm ({
           >
             <ArrowLeft
               size={20}
-              color={disabled ? '#ccc' : '#009FE1'}
+              color={disabled ? colors.textSecondary : colors.primary}
               style={navigationStyles.iconStyle}
             />
             <Text
@@ -433,11 +456,10 @@ export default function ConfirmOrderForm ({
             </Text>
           </TouchableOpacity>
         ) : (
-          /* Spacer when previous button is hidden */
           <View style={{ flex: 1 }} />
         )}
 
-        {/* Next Button - Show only if not on last step */}
+        {/* Next Button */}
         {showNext && (
           <TouchableOpacity
             style={[
@@ -460,7 +482,7 @@ export default function ConfirmOrderForm ({
             </Text>
             <ArrowRight
               size={20}
-              color={disabled ? '#ccc' : '#009FE1'}
+              color={disabled ? colors.textSecondary : colors.primary}
               style={navigationStyles.iconStyle}
             />
           </TouchableOpacity>
@@ -649,7 +671,7 @@ export default function ConfirmOrderForm ({
     fetchApplicableCoupons()
   }
 
-  // UPDATED: Handle payment confirmation with order creation API
+  // Handle payment confirmation with order creation API
   const handlePaymentConfirm = async () => {
     try {
       setIsProcessing(true)
@@ -690,19 +712,19 @@ export default function ConfirmOrderForm ({
         router.replace('./orderconfirmed')
       } else {
         console.error('❌ No checkout URL received from API')
-        // Handle error - show message to user
         setIsProcessing(false)
       }
     } catch (error) {
       console.error('❌ Order creation failed:', error)
       setIsProcessing(false)
-      // Handle error - show message to user
     }
   }
 
   const handlePaymentCancel = () => {
     setShowPaymentModal(false)
   }
+
+  const styles = createMainStyles(colors)
 
   // Handle case where Redux data is not yet available
   if (!orderData.selectedClothes || !orderData.selectedStore) {
@@ -724,7 +746,7 @@ export default function ConfirmOrderForm ({
           {/* Selected Shop */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Selected Shop</Text>
-            <StoreInfo store={orderData.selectedStore} />
+            <StoreInfo store={orderData.selectedStore} colors={colors} />
           </View>
 
           {/* Selected Services */}
@@ -732,7 +754,7 @@ export default function ConfirmOrderForm ({
             <Text style={styles.sectionTitle}>Selected Services</Text>
             <View style={styles.servicesContainer}>
               {orderData.selectedClothes.items.map((item, index) => (
-                <OrderItem key={`item-${index}`} item={item} />
+                <OrderItem key={`item-${index}`} item={item} colors={colors} />
               ))}
             </View>
           </View>
@@ -771,11 +793,7 @@ export default function ConfirmOrderForm ({
                 </View>
 
                 <View style={styles.feeRow}>
-                  <View
-                    style={{
-                      width: '50%'
-                    }}
-                  >
+                  <View style={{ width: '50%' }}>
                     <Text style={styles.feeLabel}>Platform Fee</Text>
                   </View>
                   <Text style={styles.feeValue}>
@@ -784,11 +802,7 @@ export default function ConfirmOrderForm ({
                 </View>
 
                 <View style={styles.feeRow}>
-                  <View
-                    style={{
-                      width: '50%'
-                    }}
-                  >
+                  <View style={{ width: '50%' }}>
                     <Text style={styles.feeLabel}>Delivery Charge</Text>
                   </View>
                   <Text style={styles.feeValue}>
@@ -835,7 +849,11 @@ export default function ConfirmOrderForm ({
                 </Text>
                 <ChevronDown
                   size={16}
-                  color={loadingBreakdown || isProcessing ? '#ccc' : '#008ECC'}
+                  color={
+                    loadingBreakdown || isProcessing
+                      ? colors.textSecondary
+                      : colors.primary
+                  }
                 />
               </TouchableOpacity>
             )}
@@ -869,7 +887,7 @@ export default function ConfirmOrderForm ({
                     (loadingBreakdown || isProcessing) && styles.disabledInput
                   ]}
                   placeholder='Enter Coupon Code'
-                  placeholderTextColor='#999'
+                  placeholderTextColor={colors.textSecondary}
                   value={couponCode}
                   onChangeText={setCouponCode}
                   autoCapitalize='characters'
@@ -926,6 +944,7 @@ export default function ConfirmOrderForm ({
         }}
         onApply={handleCouponSelect}
         loading={loadingCoupons}
+        colors={colors}
       />
 
       {/* Payment Confirmation Modal */}
@@ -934,540 +953,574 @@ export default function ConfirmOrderForm ({
         onCancel={handlePaymentCancel}
         onConfirm={handlePaymentConfirm}
         total={paymentBreakdown ? paymentBreakdown.finalPayable : orderTotal}
+        colors={colors}
       />
     </>
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5'
-  },
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  contentContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 20
-  },
-  formCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    flexShrink: 1
-  },
-  loadingContainer: {
-    padding: 16,
-    alignItems: 'center'
-  },
-  errorContainer: {
-    padding: 12,
-    backgroundColor: '#ffebee',
-    borderRadius: 8,
-    marginBottom: 16,
-    marginHorizontal: 4
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#d32f2f',
-    textAlign: 'center',
-    flexShrink: 1
-  },
+// Main styles
+const createMainStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.surface
+    },
+    centerContent: {
+      justifyContent: 'center',
+      alignItems: 'center'
+    },
+    contentContainer: {
+      paddingHorizontal: 20,
+      paddingVertical: 20
+    },
+    formCard: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      paddingVertical: 20,
+      paddingHorizontal: 20,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      borderWidth: colors.background === '#000000' ? 1 : 0,
+      borderColor: colors.border
+    },
+    loadingText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      flexShrink: 1
+    },
+    loadingContainer: {
+      padding: 16,
+      alignItems: 'center'
+    },
+    errorContainer: {
+      padding: 12,
+      backgroundColor: colors.notification + '20',
+      borderRadius: 8,
+      marginBottom: 16,
+      marginHorizontal: 4,
+      borderWidth: 1,
+      borderColor: colors.notification + '50'
+    },
+    errorText: {
+      fontSize: 14,
+      color: colors.notification,
+      textAlign: 'center',
+      flexShrink: 1
+    },
 
-  // Sections
-  section: {
-    marginBottom: 24,
-    paddingHorizontal: 4
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
-    flexShrink: 1
-  },
+    // Sections
+    section: {
+      marginBottom: 24,
+      paddingHorizontal: 4
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 12,
+      flexShrink: 1
+    },
 
-  // Store Info
-  storeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 4
-  },
-  storeImage: {
-    width: 60,
-    height: 50,
-    borderRadius: 8,
-    marginRight: 12,
-    backgroundColor: '#f0f0f0'
-  },
-  storeInfo: {
-    flex: 1
-  },
-  storeName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-    flexShrink: 1,
-    paddingRight: 8
-  },
-  storeRating: {
-    flexDirection: 'row'
-  },
+    // Services
+    servicesContainer: {
+      gap: 16,
+      paddingHorizontal: 4
+    },
 
-  // Services
-  servicesContainer: {
-    gap: 16,
-    paddingHorizontal: 4
-  },
-  orderItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 4
-  },
-  serviceIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: '#e8f4fd',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    flexShrink: 0
-  },
-  serviceIconText: {
-    fontSize: 16
-  },
-  itemInfo: {
-    flex: 1,
-    paddingRight: 8
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 2,
-    flexShrink: 1
-  },
-  itemWeight: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 2,
-    flexShrink: 1
-  },
-  itemTailoring: {
-    fontSize: 12,
-    color: '#008ECC',
-    fontStyle: 'italic',
-    flexShrink: 1
-  },
-  itemPrice: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    flexShrink: 0,
-    minWidth: 60,
-    paddingRight: 4,
-    textAlign: 'right'
-  },
+    // Subtotal Section
+    subtotalSection: {
+      marginBottom: 16,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingHorizontal: 4
+    },
 
-  // Subtotal Section
-  subtotalSection: {
-    marginBottom: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    paddingHorizontal: 4
-  },
+    // Fees Section
+    feesSection: {
+      marginBottom: 24,
+      paddingVertical: 8,
+      paddingHorizontal: 4
+    },
+    feeRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 8,
+      paddingHorizontal: 4
+    },
+    feeLabel: {
+      fontSize: 16,
+      color: colors.text,
+      flexShrink: 1,
+      paddingRight: 12
+    },
+    feeValue: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      flexShrink: 0,
+      minWidth: 70,
+      paddingRight: 4,
+      textAlign: 'right'
+    },
+    discountLabel: {
+      color: '#4caf50'
+    },
+    discountValue: {
+      color: '#4caf50'
+    },
 
-  // Fees Section
-  feesSection: {
-    marginBottom: 24,
-    paddingVertical: 8,
-    paddingHorizontal: 4
-  },
-  feeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4
-  },
-  feeLabel: {
-    fontSize: 16,
-    color: '#333',
-    flexShrink: 1,
-    paddingRight: 12
-  },
-  feeValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    flexShrink: 0,
-    minWidth: 70,
-    paddingRight: 4,
-    textAlign: 'right'
-  },
-  discountLabel: {
-    color: '#4caf50'
-  },
-  discountValue: {
-    color: '#4caf50'
-  },
+    // Coupon Section
+    couponSection: {
+      marginBottom: 24,
+      paddingHorizontal: 4
+    },
+    availableCouponsButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 12,
+      backgroundColor: colors.light,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      marginBottom: 12
+    },
+    availableCouponsText: {
+      fontSize: 14,
+      color: colors.primary,
+      fontWeight: '600'
+    },
+    appliedCouponContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 12,
+      backgroundColor: colors.light,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#4caf50'
+    },
+    appliedCouponInfo: {
+      flex: 1
+    },
+    appliedCouponCode: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#4caf50'
+    },
+    appliedCouponDescription: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 2,
+      flexShrink: 1
+    },
+    removeCouponButton: {
+      padding: 8,
+      borderRadius: 20,
+      backgroundColor: colors.notification + '20'
+    },
+    removeCouponText: {
+      fontSize: 16,
+      color: colors.notification,
+      fontWeight: 'bold'
+    },
+    couponContainer: {
+      flexDirection: 'row',
+      gap: 8,
+      alignItems: 'center'
+    },
+    couponInput: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      fontSize: 16,
+      backgroundColor: colors.background,
+      color: colors.text,
+      textTransform: 'uppercase'
+    },
+    applyButton: {
+      backgroundColor: '#28a745',
+      borderRadius: 8,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minWidth: 80,
+      flexShrink: 0
+    },
+    applyButtonDisabled: {
+      backgroundColor: colors.border
+    },
+    applyButtonText: {
+      color: 'white',
+      fontSize: 16,
+      fontWeight: '600'
+    },
 
-  // Coupon Section
-  couponSection: {
-    marginBottom: 24,
-    paddingHorizontal: 4
-  },
-  availableCouponsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
-    backgroundColor: '#f0f9ff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#008ECC',
-    marginBottom: 12
-  },
-  availableCouponsText: {
-    fontSize: 14,
-    color: '#008ECC',
-    fontWeight: '600'
-  },
-  appliedCouponContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    backgroundColor: '#f0f9ff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#4caf50'
-  },
-  appliedCouponInfo: {
-    flex: 1
-  },
-  appliedCouponCode: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#4caf50'
-  },
-  appliedCouponDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
-    flexShrink: 1
-  },
-  removeCouponButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: '#ffebee'
-  },
-  removeCouponText: {
-    fontSize: 16,
-    color: '#d32f2f',
-    fontWeight: 'bold'
-  },
-  couponContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center'
-  },
-  couponInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    backgroundColor: 'white',
-    textTransform: 'uppercase'
-  },
-  applyButton: {
-    backgroundColor: '#28a745',
-    borderRadius: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 80,
-    flexShrink: 0
-  },
-  applyButtonDisabled: {
-    backgroundColor: '#cccccc'
-  },
-  applyButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600'
-  },
+    // Disabled states
+    disabledButton: {
+      opacity: 0.6
+    },
+    disabledText: {
+      color: colors.textSecondary
+    },
+    disabledInput: {
+      backgroundColor: colors.surface,
+      color: colors.textSecondary
+    },
 
-  // Disabled states
-  disabledButton: {
-    opacity: 0.6
-  },
-  disabledText: {
-    color: '#ccc'
-  },
-  disabledInput: {
-    backgroundColor: '#f5f5f5',
-    color: '#ccc'
-  },
+    // Total Section
+    totalSection: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 32,
+      paddingTop: 16,
+      borderTopWidth: 2,
+      borderTopColor: colors.border,
+      paddingHorizontal: 4
+    },
+    totalLabel: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: colors.text,
+      flexShrink: 1,
+      paddingRight: 12
+    },
+    totalAmount: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.text,
+      flexShrink: 0,
+      minWidth: 100,
+      paddingRight: 4,
+      textAlign: 'right'
+    }
+  })
 
-  // Total Section
-  totalSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 32,
-    paddingTop: 16,
-    borderTopWidth: 2,
-    borderTopColor: '#e0e0e0',
-    paddingHorizontal: 4
-  },
-  totalLabel: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
-    flexShrink: 1,
-    paddingRight: 12
-  },
-  totalAmount: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#333',
-    flexShrink: 0,
-    minWidth: 100,
-    paddingRight: 4,
-    textAlign: 'right'
-  },
+// Service Icon styles
+const createServiceIconStyles = (colors: any) =>
+  StyleSheet.create({
+    serviceIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      backgroundColor: colors.light,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+      flexShrink: 0
+    },
+    serviceIconText: {
+      fontSize: 16
+    }
+  })
 
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    padding: 24,
-    borderRadius: 16,
-    width: '100%',
-    maxWidth: 400,
-    alignItems: 'center',
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 12,
-    textAlign: 'center',
-    flexShrink: 1
-  },
-  modalMessage: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 22,
-    flexShrink: 1,
-    paddingHorizontal: 4
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 16,
-    width: '100%'
-  },
-  modalCancelButton: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: '#f8f9fa',
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  modalConfirmButton: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: '#008ECC',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  modalCancelText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
-    textAlign: 'center'
-  },
-  modalConfirmText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
-    textAlign: 'center'
-  },
+// Order Item styles
+const createOrderItemStyles = (colors: any) =>
+  StyleSheet.create({
+    orderItemRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 4
+    },
+    itemInfo: {
+      flex: 1,
+      paddingRight: 8
+    },
+    itemName: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: colors.text,
+      marginBottom: 2,
+      flexShrink: 1
+    },
+    itemWeight: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 2,
+      flexShrink: 1
+    },
+    itemTailoring: {
+      fontSize: 12,
+      color: colors.primary,
+      fontStyle: 'italic',
+      flexShrink: 1
+    },
+    itemPrice: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      flexShrink: 0,
+      minWidth: 60,
+      paddingRight: 4,
+      textAlign: 'right'
+    }
+  })
 
-  // Coupon Modal Styles
-  couponModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end'
-  },
-  couponModalContent: {
-    backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '80%',
-    paddingTop: 20
-  },
-  couponModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0'
-  },
-  couponModalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333'
-  },
-  couponModalClose: {
-    fontSize: 24,
-    color: '#666',
-    padding: 4
-  },
-  couponList: {
-    maxHeight: 400,
-    paddingHorizontal: 20
-  },
-  couponItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    marginVertical: 6,
-    backgroundColor: 'white'
-  },
-  couponItemSelected: {
-    borderColor: '#008ECC',
-    backgroundColor: '#f0f9ff'
-  },
-  couponContent: {
-    flex: 1
-  },
-  couponCode: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4
-  },
-  couponDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-    flexShrink: 1
-  },
-  couponDiscount: {
-    fontSize: 14,
-    color: '#4caf50',
-    fontWeight: '600'
-  },
-  couponSelector: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#e0e0e0',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  couponSelectorSelected: {
-    borderColor: '#008ECC',
-    backgroundColor: '#008ECC'
-  },
-  checkmark: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold'
-  },
-  couponLoadingContainer: {
-    padding: 40,
-    alignItems: 'center'
-  },
-  noCouponsContainer: {
-    padding: 40,
-    alignItems: 'center'
-  },
-  noCouponsText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center'
-  },
-  couponModalButtons: {
-    flexDirection: 'row',
-    gap: 16,
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0'
-  },
-  couponCancelButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 8,
-    backgroundColor: '#f8f9fa',
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-    alignItems: 'center'
-  },
-  couponApplyButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 8,
-    backgroundColor: '#008ECC',
-    alignItems: 'center'
-  },
-  couponApplyButtonDisabled: {
-    backgroundColor: '#cccccc'
-  },
-  couponCancelText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666'
-  },
-  couponApplyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: 'white'
-  }
-})
+// Store Info styles
+const createStoreInfoStyles = (colors: any) =>
+  StyleSheet.create({
+    storeContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 4
+    },
+    storeImage: {
+      width: 60,
+      height: 50,
+      borderRadius: 8,
+      marginRight: 12,
+      backgroundColor: colors.surface
+    },
+    storeInfo: {
+      flex: 1
+    },
+    storeName: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 4,
+      flexShrink: 1,
+      paddingRight: 8
+    },
+    storeRating: {
+      flexDirection: 'row'
+    }
+  })
+
+// Modal styles
+const createModalStyles = (colors: any) =>
+  StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20
+    },
+    modalContent: {
+      backgroundColor: colors.background,
+      padding: 24,
+      borderRadius: 16,
+      width: '100%',
+      maxWidth: 400,
+      alignItems: 'center',
+      elevation: 10,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      borderWidth: colors.background === '#000000' ? 1 : 0,
+      borderColor: colors.border
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 12,
+      textAlign: 'center',
+      flexShrink: 1
+    },
+    modalMessage: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: 24,
+      lineHeight: 22,
+      flexShrink: 1,
+      paddingHorizontal: 4
+    },
+    modalButtons: {
+      flexDirection: 'row',
+      gap: 16,
+      width: '100%'
+    },
+    modalCancelButton: {
+      flex: 1,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    modalConfirmButton: {
+      flex: 1,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    modalCancelText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      textAlign: 'center'
+    },
+    modalConfirmText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.background,
+      textAlign: 'center'
+    }
+  })
+
+// Coupon Modal styles
+const createCouponModalStyles = (colors: any) =>
+  StyleSheet.create({
+    couponModalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'flex-end'
+    },
+    couponModalContent: {
+      backgroundColor: colors.background,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      maxHeight: '80%',
+      paddingTop: 20
+    },
+    couponModalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingBottom: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border
+    },
+    couponModalTitle: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: colors.text
+    },
+    couponModalClose: {
+      fontSize: 24,
+      color: colors.textSecondary,
+      padding: 4
+    },
+    couponList: {
+      maxHeight: 400,
+      paddingHorizontal: 20
+    },
+    couponItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      marginVertical: 6,
+      backgroundColor: colors.background
+    },
+    couponItemSelected: {
+      borderColor: colors.primary,
+      backgroundColor: colors.light
+    },
+    couponContent: {
+      flex: 1
+    },
+    couponCode: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 4
+    },
+    couponDescription: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 4,
+      flexShrink: 1
+    },
+    couponDiscount: {
+      fontSize: 14,
+      color: '#4caf50',
+      fontWeight: '600'
+    },
+    couponSelector: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    couponSelectorSelected: {
+      borderColor: colors.primary,
+      backgroundColor: colors.primary
+    },
+    checkmark: {
+      color: colors.background,
+      fontSize: 16,
+      fontWeight: 'bold'
+    },
+    couponLoadingContainer: {
+      padding: 40,
+      alignItems: 'center'
+    },
+    noCouponsContainer: {
+      padding: 40,
+      alignItems: 'center'
+    },
+    noCouponsText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center'
+    },
+    couponModalButtons: {
+      flexDirection: 'row',
+      gap: 16,
+      padding: 20,
+      borderTopWidth: 1,
+      borderTopColor: colors.border
+    },
+    couponCancelButton: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 8,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center'
+    },
+    couponApplyButton: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+      alignItems: 'center'
+    },
+    couponApplyButtonDisabled: {
+      backgroundColor: colors.border
+    },
+    couponCancelText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textSecondary
+    },
+    couponApplyText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.background
+    },
+    loadingText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center'
+    }
+  })

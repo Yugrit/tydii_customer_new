@@ -111,7 +111,7 @@ const createStyles = (colors: any) =>
       flex: 1
     },
     iconContainer: {
-      backgroundColor: '#C5ECFC',
+      backgroundColor: colors.light,
       width: 100,
       padding: 15,
       height: 100,

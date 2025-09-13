@@ -1,4 +1,5 @@
 // components/order/forms/PickupDetailsForm.tsx
+import { useThemeColors } from '@/hooks/useThemeColor'
 import { updatePickupDetails } from '@/Redux/slices/orderSlice'
 import { generateTimeSlots, isFutureDate } from '@/services/ValidationService'
 import React, { useMemo, useState } from 'react'
@@ -13,7 +14,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import CustomInput from './CustomInput'
 import OrderNavigationButtons from './OrderNavigationButtons'
 
-// NEW: Address interface
+// Address interface
 interface Address {
   address_line: string
   city: string
@@ -34,11 +35,12 @@ export default function PickupDetailsForm ({
   onPrev
 }: PickupDetailsFormProps) {
   const dispatch = useDispatch()
+  const colors = useThemeColors()
 
   // Get user addresses from Redux
   const { userData } = useSelector((state: any) => state.user)
 
-  // UPDATED: State now uses Address objects
+  // State now uses Address objects
   const [formData, setFormData] = useState({
     selectedPickupAddress: null as Address | null,
     selectedDeliveryAddress: null as Address | null,
@@ -87,7 +89,7 @@ export default function PickupDetailsForm ({
             label: displayAddress,
             value: displayAddress,
             isPrimary: address.is_primary,
-            addressObject: addressObject // NEW: Store the full address object
+            addressObject: addressObject // Store the full address object
           })
         })
     }
@@ -154,7 +156,7 @@ export default function PickupDetailsForm ({
     return newErrors
   }
 
-  // UPDATED: Handle address selection
+  // Handle address selection
   const handleAddressSelection = (
     field: 'pickup' | 'delivery',
     selectedLabel: string
@@ -241,11 +243,10 @@ export default function PickupDetailsForm ({
       return
     }
 
-    // UPDATED: Save form data with Address objects to Redux
+    // Save form data with Address objects to Redux
     dispatch(
       updatePickupDetails({
         pickupAddress: formData.selectedPickupAddress!, // Required address object
-
         collectionDate: formData.collectionDate,
         collectionTime: formData.collectionTime,
         deliveryDate: formData.deliveryDate,
@@ -269,6 +270,8 @@ export default function PickupDetailsForm ({
     onNext()
   }
 
+  const styles = createStyles(colors)
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -278,12 +281,12 @@ export default function PickupDetailsForm ({
       >
         <View style={styles.formCard}>
           <Text style={styles.title}>
-            Enter <Text style={{ color: '#008ECC' }}>Pickup Details</Text>
+            Enter <Text style={{ color: colors.primary }}>Pickup Details</Text>
           </Text>
           <View style={styles.divider} />
 
           <View style={styles.inputContainer}>
-            {/* UPDATED: Pickup Address Selection */}
+            {/* Pickup Address Selection */}
             <CustomInput
               label='Pickup Location'
               placeholder='Select your pickup address'
@@ -423,79 +426,83 @@ export default function PickupDetailsForm ({
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1
-  },
-  scrollContainer: {
-    flex: 1
-  },
-  contentContainer: {
-    marginHorizontal: 15,
-    paddingBottom: 20
-  },
-  formCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    paddingVertical: 20,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginHorizontal: 20,
-    color: '#333',
-    marginBottom: 10
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#E0E0E0',
-    marginBottom: 15
-  },
-  inputContainer: {
-    paddingHorizontal: 20
-  },
-  repeatContainer: {
-    marginTop: 20
-  },
-  repeatOptionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 20,
-    flexWrap: 'wrap'
-  },
-  repeatOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 4
-  },
-  radioButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#D0D5DD',
-    marginRight: 8,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  radioButtonSelected: {
-    borderColor: '#008ECC'
-  },
-  radioButtonSelectedDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#008ECC'
-  },
-  repeatOptionText: {
-    fontSize: 14,
-    color: '#667085',
-    fontWeight: '400'
-  }
-})
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.surface
+    },
+    scrollContainer: {
+      flex: 1
+    },
+    contentContainer: {
+      marginHorizontal: 15,
+      paddingBottom: 20
+    },
+    formCard: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      paddingVertical: 20,
+      elevation: 1,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 1,
+      borderWidth: colors.background === '#000000' ? 1 : 0,
+      borderColor: colors.border
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: '600',
+      marginHorizontal: 20,
+      color: colors.text,
+      marginBottom: 10
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginBottom: 15
+    },
+    inputContainer: {
+      paddingHorizontal: 20
+    },
+    repeatContainer: {
+      marginTop: 20
+    },
+    repeatOptionsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      gap: 20,
+      flexWrap: 'wrap'
+    },
+    repeatOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 4
+    },
+    radioButton: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: colors.border,
+      marginRight: 8,
+      justifyContent: 'center',
+      alignItems: 'center'
+    },
+    radioButtonSelected: {
+      borderColor: colors.primary
+    },
+    radioButtonSelectedDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: colors.primary
+    },
+    repeatOptionText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      fontWeight: '400'
+    }
+  })

@@ -1,10 +1,14 @@
 // app/(tabs)/_layout.tsx
 import Header from '@/components/Header'
-import { Tabs } from 'expo-router'
+import { router, Tabs } from 'expo-router'
 import { Heart, Home, Settings, ShoppingBag, User } from 'lucide-react-native'
 import React from 'react'
 
 export default function TabsLayout () {
+  const onNotificationPress = () => {
+    router.replace('./(setting)/notification')
+  }
+
   return (
     <Tabs
       screenOptions={({ route }) => ({
@@ -12,7 +16,7 @@ export default function TabsLayout () {
         tabBarInactiveTintColor: 'gray',
         tabBarShowLabel: true,
         tabBarLabelPosition: 'below-icon',
-        header: () => <Header />,
+        header: () => <Header onNotificationPress={onNotificationPress} />,
         headerShown: true, // Use your custom header
         tabBarIcon: ({ color, size }) => {
           switch (route.name) {

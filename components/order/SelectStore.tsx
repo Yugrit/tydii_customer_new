@@ -1,4 +1,5 @@
 // components/order/forms/StoreSelectionForm.tsx
+import { useThemeColors } from '@/hooks/useThemeColor'
 import {
   updateItemPrices,
   updatePaymentBreakdown,
@@ -29,11 +30,13 @@ interface StoreSelectionFormProps {
 const StoreCard = ({
   store,
   selected,
-  onSelect
+  onSelect,
+  colors
 }: {
   store: Store
   selected: boolean
   onSelect: (storeId: string) => void
+  colors: any
 }) => {
   // Function to render stars with decimal rating support
   const renderStars = () => {
@@ -80,65 +83,71 @@ const StoreCard = ({
     ? `${store.store_hours.Monday.open} - ${store.store_hours.Monday.close}`
     : '9 AM - 6 PM'
 
+  const cardStyles = createStoreCardStyles(colors, selected)
+
   return (
     <TouchableOpacity
-      style={[styles.storeCard, selected && styles.storeCardSelected]}
+      style={cardStyles.storeCard}
       onPress={() => onSelect(store.id.toString())}
       activeOpacity={0.8}
     >
       {/* Image Container */}
-      <View style={styles.imageWrapper}>
+      <View style={cardStyles.imageWrapper}>
         <Image
           source={{
             uri:
               store.uploadDoc?.[0]?.fileUrl ||
               'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&h=200&fit=crop'
           }}
-          style={styles.storeImage}
+          style={cardStyles.storeImage}
           resizeMode='cover'
         />
 
-        {/* New Badge */}
+        {/* Preferred Badge */}
         {store.preferred && (
-          <View style={styles.newBadge}>
-            <Text style={styles.newBadgeText}>Preferred</Text>
+          <View style={cardStyles.newBadge}>
+            <Text style={cardStyles.newBadgeText}>Preferred</Text>
           </View>
         )}
 
-        {/* Heart Icon using Lucide */}
+        {/* Heart Icon */}
         <TouchableOpacity
-          style={styles.heartButton}
+          style={cardStyles.heartButton}
           onPress={e => {
             e.stopPropagation()
             // Handle favorite logic
           }}
         >
-          <Heart size={16} color='#FF5722' fill='#FF5722' />
+          <Heart
+            size={16}
+            color={colors.notification}
+            fill={colors.notification}
+          />
         </TouchableOpacity>
       </View>
 
       {/* Content */}
-      <View style={styles.cardContent}>
-        <Text style={styles.storeName} numberOfLines={1}>
+      <View style={cardStyles.cardContent}>
+        <Text style={cardStyles.storeName} numberOfLines={1}>
           {store.storeName}
         </Text>
 
-        <View style={styles.priceBadge}>
-          <Text style={styles.priceText}>
+        <View style={cardStyles.priceBadge}>
+          <Text style={cardStyles.priceText}>
             Est. ${store.estimatedPrice || 25}
           </Text>
         </View>
 
-        {/* Rating with Lucide Stars */}
-        <View style={styles.ratingContainer}>
-          <View style={styles.starsRow}>{renderStars()}</View>
+        {/* Rating with Stars */}
+        <View style={cardStyles.ratingContainer}>
+          <View style={cardStyles.starsRow}>{renderStars()}</View>
         </View>
 
-        <View style={styles.hoursContainer}>
-          <Text style={styles.hours}>{operatingHours}</Text>
+        <View style={cardStyles.hoursContainer}>
+          <Text style={cardStyles.hours}>{operatingHours}</Text>
         </View>
 
-        <Text style={styles.description} numberOfLines={2}>
+        <Text style={cardStyles.description} numberOfLines={2}>
           {displayAddress}
         </Text>
       </View>
@@ -151,6 +160,7 @@ export default function StoreSelectionForm ({
   onPrev
 }: StoreSelectionFormProps) {
   const dispatch = useDispatch()
+  const colors = useThemeColors()
   const { orderData, serviceType } = useSelector(
     (state: RootState) => state.order
   )
@@ -161,7 +171,7 @@ export default function StoreSelectionForm ({
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // UPDATED: Build API payload using pickup address from orderData
+  // Build API payload using pickup address from orderData
   const buildEstimatePayload = () => {
     console.log('Order Data Till Now ::: ', orderData)
     const pickupDetails = orderData.pickupDetails
@@ -175,7 +185,7 @@ export default function StoreSelectionForm ({
       throw new Error('Missing required order data')
     }
 
-    // UPDATED: Get pickup address directly from orderData
+    // Get pickup address directly from orderData
     const pickupAddress = pickupDetails.pickupAddress
     console.log(pickupAddress)
 
@@ -238,7 +248,7 @@ export default function StoreSelectionForm ({
     const items = buildStructuredItems()
     console.log('🔧 Built structured items for', serviceType, ':', items)
 
-    // UPDATED: Build payload using pickup address object
+    // Build payload using pickup address object
     const payload = {
       serviceType: serviceType,
       items: items,
@@ -257,9 +267,9 @@ export default function StoreSelectionForm ({
         close: pickupDetails.deliveryTime?.split('-')[1]?.trim() || '12:00 PM',
         note: ''
       },
-      // UPDATED: Use pickup address object directly from orderData
+      // Use pickup address object directly from orderData
       pickupAddress: {
-        id: 80, // You may want to add this to your Address interface if needed
+        id: 80,
         address_line: pickupAddress.address_line,
         city: pickupAddress.city,
         state: pickupAddress.state,
@@ -361,7 +371,7 @@ export default function StoreSelectionForm ({
       }
     }
 
-    // UPDATED: Only load if we have required data including pickup address
+    // Only load if we have required data including pickup address
     if (orderData.pickupDetails?.pickupAddress && orderData.selectedClothes) {
       loadStores()
     } else {
@@ -484,7 +494,7 @@ export default function StoreSelectionForm ({
       console.log('🏪 Selected store:', selectedStore.storeName)
       console.log('💰 Store total price:', selectedStore.totalPrice)
 
-      // UPDATED: Convert store address to Address object format
+      // Convert store address to Address object format
       const storeAddress = selectedStore.storeAddresses?.[0]
       const storeAddressObject = storeAddress
         ? {
@@ -511,7 +521,7 @@ export default function StoreSelectionForm ({
         updateSelectedStore({
           store_id: selectedStore.id,
           store_name: selectedStore.storeName,
-          store_address: storeAddressObject // Now using Address object
+          store_address: storeAddressObject
         })
       )
 
@@ -539,7 +549,7 @@ export default function StoreSelectionForm ({
       // Auto-advance after selection
       setTimeout(() => {
         onNext()
-      }, 800) // Slightly longer to allow price updates
+      }, 800)
     }
   }
 
@@ -550,6 +560,8 @@ export default function StoreSelectionForm ({
       setErrors({ store: 'Please select a store' })
     }
   }
+
+  const styles = createMainStyles(colors)
 
   if (loading) {
     return (
@@ -590,6 +602,7 @@ export default function StoreSelectionForm ({
                   store={store}
                   selected={selectedStoreId === store.id.toString()}
                   onSelect={handleStoreSelect}
+                  colors={colors}
                 />
               ))}
             </View>
@@ -609,185 +622,190 @@ export default function StoreSelectionForm ({
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1
-  },
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  contentContainer: {
-    marginHorizontal: 15,
-    paddingBottom: 20
-  },
-  formCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    paddingVertical: 20,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginHorizontal: 20,
-    color: '#333',
-    marginBottom: 10
-  },
-  titleAccent: {
-    color: '#008ECC'
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#E0E0E0',
-    marginBottom: 15
-  },
-  inputContainer: {
-    paddingHorizontal: 5
-  },
-  storeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'space-between',
-    marginBottom: 20
-  },
-  storeCard: {
-    width: '48%',
-    padding: 5,
-    backgroundColor: 'white',
-    borderRadius: 16,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    overflow: 'hidden',
-    marginBottom: 16
-  },
-  storeCardSelected: {
-    borderColor: '#4FC3F7',
-    borderWidth: 2,
-    elevation: 4,
-    shadowColor: '#4FC3F7',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4
-  },
-  imageWrapper: {
-    height: 120,
-    borderRadius: 12,
-    overflow: 'hidden',
-    position: 'relative',
-    backgroundColor: '#f5f5f5'
-  },
-  storeImage: {
-    width: '100%',
-    height: '100%'
-  },
-  newBadge: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: '#4CAF50',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4
-  },
-  newBadgeText: {
-    color: 'white',
-    fontSize: 11,
-    fontWeight: '600'
-  },
-  heartButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  cardContent: {
-    paddingVertical: 10,
-    alignItems: 'center'
-  },
-  storeName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#063853',
-    textAlign: 'center',
-    marginBottom: 8
-  },
-  priceBadge: {
-    backgroundColor: '#02537F',
-    borderRadius: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    marginBottom: 8
-  },
-  priceText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600'
-  },
-  ratingContainer: {
-    alignItems: 'center',
-    marginBottom: 8
-  },
-  starsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2
-  },
-  hoursContainer: {
-    width: '80%',
-    paddingVertical: 5,
-    backgroundColor: '#EBF9FF',
-    borderRadius: 5,
-    marginBottom: 6
-  },
-  hours: {
-    fontSize: 16,
-    color: '#767777',
-    textAlign: 'center'
-  },
-  description: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-    lineHeight: 20
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center'
-  },
-  errorContainer: {
-    padding: 16,
-    backgroundColor: '#ffebee',
-    borderRadius: 8,
-    marginBottom: 20
-  },
-  errorText: {
-    fontSize: 14,
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 5
-  },
-  noStoresContainer: {
-    padding: 20,
-    alignItems: 'center'
-  },
-  noStoresText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center'
-  }
-})
+// Main component styles
+const createMainStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.surface
+    },
+    centerContent: {
+      justifyContent: 'center',
+      alignItems: 'center'
+    },
+    contentContainer: {
+      marginHorizontal: 5,
+      paddingBottom: 20
+    },
+    formCard: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      paddingVertical: 20,
+      elevation: 1,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 1,
+      borderWidth: colors.background === '#000000' ? 1 : 0,
+      borderColor: colors.border
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: '600',
+      marginHorizontal: 20,
+      color: colors.text,
+      marginBottom: 10
+    },
+    titleAccent: {
+      color: colors.primary
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginBottom: 15
+    },
+    inputContainer: {
+      paddingHorizontal: 5
+    },
+    storeGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+      justifyContent: 'space-between',
+      marginBottom: 20
+    },
+    loadingText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center'
+    },
+    errorContainer: {
+      padding: 16,
+      backgroundColor: colors.notification + '20',
+      borderRadius: 8,
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: colors.notification + '50'
+    },
+    errorText: {
+      fontSize: 14,
+      color: colors.notification,
+      textAlign: 'center',
+      marginTop: 5
+    },
+    noStoresContainer: {
+      padding: 20,
+      alignItems: 'center'
+    },
+    noStoresText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center'
+    }
+  })
+
+// Store card styles
+const createStoreCardStyles = (colors: any, selected: boolean) =>
+  StyleSheet.create({
+    storeCard: {
+      width: '48%',
+      padding: 5,
+      backgroundColor: colors.background,
+      borderRadius: 16,
+      elevation: 1,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      overflow: 'hidden',
+      marginBottom: 16,
+      borderColor: selected ? colors.primary : colors.border,
+      borderWidth: selected ? 2 : 1
+    },
+    imageWrapper: {
+      height: 120,
+      borderRadius: 12,
+      overflow: 'hidden',
+      position: 'relative',
+      backgroundColor: colors.surface
+    },
+    storeImage: {
+      width: '100%',
+      height: '100%'
+    },
+    newBadge: {
+      position: 'absolute',
+      top: 8,
+      left: 8,
+      backgroundColor: '#4CAF50',
+      borderRadius: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 4
+    },
+    newBadgeText: {
+      color: 'white',
+      fontSize: 11,
+      fontWeight: '600'
+    },
+    heartButton: {
+      position: 'absolute',
+      top: 8,
+      right: 8,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.background + 'E6',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    cardContent: {
+      paddingVertical: 10,
+      alignItems: 'center'
+    },
+    storeName: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.primary,
+      textAlign: 'center',
+      marginBottom: 8
+    },
+    priceBadge: {
+      backgroundColor: colors.primary,
+      borderRadius: 5,
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      marginBottom: 8
+    },
+    priceText: {
+      color: colors.background,
+      fontSize: 14,
+      fontWeight: '600'
+    },
+    ratingContainer: {
+      alignItems: 'center',
+      marginBottom: 8
+    },
+    starsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 2
+    },
+    hoursContainer: {
+      width: '80%',
+      paddingVertical: 5,
+      backgroundColor: colors.light,
+      borderRadius: 5,
+      marginBottom: 6
+    },
+    hours: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center'
+    },
+    description: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20
+    }
+  })

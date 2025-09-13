@@ -1,5 +1,6 @@
 // components/order/forms/DrycleaningForm.tsx
 import { ServiceTypeEnum } from '@/enums'
+import { useThemeColors } from '@/hooks/useThemeColor'
 import {
   updateSelectedClothes,
   updateStorePrices
@@ -22,13 +23,17 @@ const CategorySelector = ({
   selected,
   onSelect,
   categories,
-  loading
+  loading,
+  colors
 }: {
   selected: string
   onSelect: (category: string) => void
   categories: string[]
   loading: boolean
+  colors: any
 }) => {
+  const styles = createCategorySelectorStyles(colors)
+
   if (loading) {
     return (
       <View style={styles.categoryContainer}>
@@ -69,7 +74,8 @@ const ClothingItemRow = ({
   onCategoryChange,
   onQuantityChange,
   categories,
-  categoriesLoading
+  categoriesLoading,
+  colors
 }: {
   label: string
   item: { category: string; quantity: number }
@@ -77,6 +83,7 @@ const ClothingItemRow = ({
   onQuantityChange: (quantity: number) => void
   categories: string[]
   categoriesLoading: boolean
+  colors: any
 }) => {
   const decrease = () => {
     if (item.quantity > 0) {
@@ -87,6 +94,8 @@ const ClothingItemRow = ({
   const increase = () => {
     onQuantityChange(item.quantity + 1)
   }
+
+  const styles = createClothingItemStyles(colors)
 
   return (
     <View style={styles.clothingItemContainer}>
@@ -101,6 +110,7 @@ const ClothingItemRow = ({
             onSelect={onCategoryChange}
             categories={categories}
             loading={categoriesLoading}
+            colors={colors}
           />
         </View>
 
@@ -127,8 +137,9 @@ export default function DrycleaningForm ({
   onErrorsChange
 }: DrycleaningFormProps) {
   const dispatch = useDispatch()
+  const colors = useThemeColors()
 
-  // NEW: Get store flow data from Redux
+  // Get store flow data from Redux
   const { isStoreFlow, orderData } = useSelector(
     (state: RootState) => state.order
   )
@@ -150,7 +161,7 @@ export default function DrycleaningForm ({
     )
   }, [storePrices])
 
-  // UPDATED: Conditional fetch based on store flow
+  // Conditional fetch based on store flow
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
@@ -358,6 +369,8 @@ export default function DrycleaningForm ({
   const defaultCategory =
     clothCategories.length > 0 ? clothCategories[0] : 'Mens'
 
+  const styles = createMainStyles(colors)
+
   // Show loading state
   if (loading) {
     return (
@@ -403,6 +416,7 @@ export default function DrycleaningForm ({
             }
             categories={clothCategories} // Using cloth categories as buttons (e.g., "Kids", "Mens", "Womens")
             categoriesLoading={false}
+            colors={colors}
           />
         ))}
       </View>
@@ -414,114 +428,132 @@ export default function DrycleaningForm ({
   )
 }
 
-const styles = StyleSheet.create({
-  inputContainer: {
-    paddingHorizontal: 10
-  },
-  clothingSection: {
-    // marginBottom: 20
-  },
-  clothingItemContainer: {
-    padding: 1,
-    marginBottom: 15,
-    backgroundColor: '#f8f9fa',
-    borderWidth: 1,
-    borderColor: '#e9ecef'
-  },
-  clothingLabelContainer: {
-    paddingHorizontal: 15,
-    paddingVertical: 7
-  },
-  clothingLabel: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333'
-  },
-  clothingControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 10,
-    backgroundColor: 'white',
-    paddingHorizontal: 5,
-    paddingVertical: 10
-  },
+// Main styles
+const createMainStyles = (colors: any) =>
+  StyleSheet.create({
+    inputContainer: {
+      paddingHorizontal: 10,
+      backgroundColor: colors.background
+    },
+    clothingSection: {
+      // marginBottom: 20
+    },
+    loadingText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      padding: 20,
+      fontStyle: 'italic'
+    },
+    errorContainer: {
+      marginBottom: 10,
+      padding: 10,
+      backgroundColor: colors.notification + '20',
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.notification + '50'
+    },
+    errorText: {
+      fontSize: 12,
+      color: colors.notification,
+      marginTop: 5,
+      marginLeft: 4
+    }
+  })
 
-  // Category Selector Styles
-  categoryContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 5
-  },
-  categoryButton: {
-    borderWidth: 1,
-    borderColor: '#008ECC',
-    borderRadius: 16,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    backgroundColor: 'transparent'
-  },
-  categoryButtonSelected: {
-    backgroundColor: '#e6f3ff'
-  },
-  categoryText: {
-    fontSize: 14,
-    color: '#008ECC',
-    fontWeight: '500'
-  },
-  categoryTextSelected: {
-    color: '#0056b3',
-    fontWeight: '600'
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    padding: 20,
-    fontStyle: 'italic'
-  },
+// Category Selector styles
+const createCategorySelectorStyles = (colors: any) =>
+  StyleSheet.create({
+    categoryContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 5
+    },
+    categoryButton: {
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderRadius: 16,
+      paddingVertical: 6,
+      paddingHorizontal: 14,
+      backgroundColor: 'transparent'
+    },
+    categoryButtonSelected: {
+      backgroundColor: colors.light
+    },
+    categoryText: {
+      fontSize: 14,
+      color: colors.primary,
+      fontWeight: '500'
+    },
+    categoryTextSelected: {
+      color: colors.primary,
+      fontWeight: '600'
+    },
+    loadingText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      padding: 20,
+      fontStyle: 'italic'
+    }
+  })
 
-  // Counter Styles
-  counterControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 0
-  },
-  counterButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 16,
-    backgroundColor: '#e6f3ff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#008ECC'
-  },
-  counterButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#008ECC'
-  },
-  counterValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    minWidth: 25,
-    textAlign: 'center'
-  },
+// Clothing Item styles
+const createClothingItemStyles = (colors: any) =>
+  StyleSheet.create({
+    clothingItemContainer: {
+      padding: 1,
+      marginBottom: 15,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border
+    },
+    clothingLabelContainer: {
+      paddingHorizontal: 15,
+      paddingVertical: 7
+    },
+    clothingLabel: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: colors.text
+    },
+    clothingControls: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      flexWrap: 'wrap',
+      gap: 10,
+      backgroundColor: colors.background,
+      paddingHorizontal: 5,
+      paddingVertical: 10
+    },
 
-  // Error Styles
-  errorContainer: {
-    marginBottom: 10,
-    padding: 10,
-    backgroundColor: '#ffebee',
-    borderRadius: 8
-  },
-  errorText: {
-    fontSize: 12,
-    color: 'red',
-    marginTop: 5,
-    marginLeft: 4
-  }
-})
+    // Counter Styles
+    counterControls: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 0
+    },
+    counterButton: {
+      width: 30,
+      height: 30,
+      borderRadius: 16,
+      backgroundColor: colors.light,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.primary
+    },
+    counterButtonText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: colors.primary
+    },
+    counterValue: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      minWidth: 25,
+      textAlign: 'center'
+    }
+  })

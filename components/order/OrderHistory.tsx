@@ -1,5 +1,6 @@
+import { useThemeColors } from '@/hooks/useThemeColor'
 import ApiService from '@/services/ApiService'
-import { router } from 'expo-router' // Import router for navigation
+import { router } from 'expo-router'
 import React, { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
@@ -13,6 +14,8 @@ import { useSelector } from 'react-redux'
 import OrderCard from './OrderCard'
 
 export default function OrderHistory () {
+  const colors = useThemeColors()
+
   type OrderCardProps = {
     id: string
     orderId: string
@@ -199,11 +202,13 @@ export default function OrderHistory () {
     />
   )
 
+  const styles = createStyles(colors)
+
   const renderFooter = () => {
     if (loadingMore) {
       return (
         <View style={styles.loadMoreContainer}>
-          <ActivityIndicator size='large' color='#008ECC' />
+          <ActivityIndicator size='large' color={colors.primary} />
           <Text style={styles.loadMoreText}>Loading more orders...</Text>
         </View>
       )
@@ -243,7 +248,7 @@ export default function OrderHistory () {
       <SafeAreaView style={styles.container}>
         {renderHeader()}
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color='#008ECC' />
+          <ActivityIndicator size='large' color={colors.primary} />
           <Text style={styles.loadingText}>Loading your orders...</Text>
         </View>
       </SafeAreaView>
@@ -288,122 +293,122 @@ export default function OrderHistory () {
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa'
-  },
-  headerContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 15,
-    paddingBottom: 10
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#333333',
-    includeFontPadding: false
-  },
-  titleAccent: {
-    color: '#008ECC'
-  },
-  underline: {
-    marginTop: 8,
-    height: 3,
-    width: '28%',
-    backgroundColor: '#008ECC',
-    borderRadius: 2
-  },
-  contentContainer: {
-    paddingBottom: 20
-  },
-  emptyContentContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 20
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 50,
-    paddingHorizontal: 20
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666666',
-    textAlign: 'center',
-    includeFontPadding: false,
-    paddingHorizontal: 10,
-    lineHeight: 22,
-    alignSelf: 'stretch'
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingTop: 50
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#dc3545',
-    textAlign: 'center',
-    includeFontPadding: false,
-    paddingHorizontal: 10,
-    lineHeight: 22,
-    alignSelf: 'stretch'
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingTop: 100
-  },
-  emptyText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333333',
-    marginBottom: 8,
-    textAlign: 'center',
-    includeFontPadding: false,
-    paddingHorizontal: 10,
-    alignSelf: 'stretch'
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#666666',
-    textAlign: 'center',
-    lineHeight: 20,
-    includeFontPadding: false,
-    paddingHorizontal: 10,
-    alignSelf: 'stretch'
-  },
-  loadMoreContainer: {
-    width: '100%',
-    paddingVertical: 20,
-    alignItems: 'center',
-    paddingHorizontal: 20
-  },
-  loadMoreText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: '#666666',
-    textAlign: 'center',
-
-    includeFontPadding: false
-  },
-  noMoreContainer: {
-    width: '100%',
-    paddingVertical: 20,
-    alignItems: 'center',
-    paddingHorizontal: 20
-  },
-  noMoreText: {
-    fontSize: 14,
-    color: '#999999',
-    textAlign: 'center',
-    includeFontPadding: false
-  }
-})
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background
+    },
+    headerContainer: {
+      paddingHorizontal: 16,
+      paddingTop: 15,
+      paddingBottom: 10
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.text,
+      includeFontPadding: false
+    },
+    titleAccent: {
+      color: colors.primary
+    },
+    underline: {
+      marginTop: 8,
+      height: 3,
+      width: '28%',
+      backgroundColor: colors.primary,
+      borderRadius: 2
+    },
+    contentContainer: {
+      paddingBottom: 20
+    },
+    emptyContentContainer: {
+      flexGrow: 1,
+      paddingHorizontal: 20
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingTop: 50,
+      paddingHorizontal: 20
+    },
+    loadingText: {
+      marginTop: 16,
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      includeFontPadding: false,
+      paddingHorizontal: 10,
+      lineHeight: 22,
+      alignSelf: 'stretch'
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 32,
+      paddingTop: 50
+    },
+    errorText: {
+      fontSize: 16,
+      color: colors.notification,
+      textAlign: 'center',
+      includeFontPadding: false,
+      paddingHorizontal: 10,
+      lineHeight: 22,
+      alignSelf: 'stretch'
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 32,
+      paddingTop: 100
+    },
+    emptyText: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 8,
+      textAlign: 'center',
+      includeFontPadding: false,
+      paddingHorizontal: 10,
+      alignSelf: 'stretch'
+    },
+    emptySubtext: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+      includeFontPadding: false,
+      paddingHorizontal: 10,
+      alignSelf: 'stretch'
+    },
+    loadMoreContainer: {
+      width: '100%',
+      paddingVertical: 20,
+      alignItems: 'center',
+      paddingHorizontal: 20
+    },
+    loadMoreText: {
+      marginTop: 8,
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      includeFontPadding: false
+    },
+    noMoreContainer: {
+      width: '100%',
+      paddingVertical: 20,
+      alignItems: 'center',
+      paddingHorizontal: 20
+    },
+    noMoreText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      includeFontPadding: false
+    }
+  })

@@ -1,12 +1,14 @@
 // Redux/Store.js
 import { configureStore } from '@reduxjs/toolkit'
 import orderReducer from './slices/orderSlice' // Import the order slice
+import themeReducer from './slices/themeSlice'
 import userReducer from './slices/userSlices'
 
 const store = configureStore({
   reducer: {
     user: userReducer, // ✅ Make sure this key is 'user'
-    order: orderReducer // Add this line
+    order: orderReducer, // Add this line
+    theme: themeReducer
   }
 })
 

@@ -4,7 +4,7 @@ import { ServiceTypeEnum } from '@/enums'
 import { useThemeColors } from '@/hooks/useThemeColor'
 import { useNavigation } from '@react-navigation/native'
 import { router } from 'expo-router'
-import { ArrowRight, BadgeCheck, Heart } from 'lucide-react-native'
+import { ArrowRight, BadgeCheck, Heart, Star, StarHalf } from 'lucide-react-native'
 import React, { useMemo, useState } from 'react'
 import {
   FlatList,
@@ -225,7 +225,7 @@ export default function StoreCard ({
     for (let i = 0; i < fullStars; i++) {
       stars.push(
         <Text key={i} style={styles.star}>
-          ⭐
+          <Star size={14} color='#FFD700' fill="#FFD700" />
         </Text>
       )
     }
@@ -233,7 +233,7 @@ export default function StoreCard ({
     if (hasHalfStar) {
       stars.push(
         <Text key='half' style={styles.star}>
-          ⭐
+           <StarHalf size={14} color='#FFD700' fill="#FFD700"/>
         </Text>
       )
     }

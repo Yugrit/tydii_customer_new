@@ -1,3 +1,4 @@
+import { OrderStatus } from '@/enums'
 import { useThemeColors } from '@/hooks/useThemeColor'
 import ApiService from '@/services/ApiService'
 import { router } from 'expo-router'
@@ -83,7 +84,8 @@ export default function OrderHistory () {
         params: {
           user_id: userData.id,
           limit: 10,
-          page: pageNumber
+          page: pageNumber,
+          order_status: `${OrderStatus.AT_STORE},${OrderStatus.PICKED_UP},${OrderStatus.DELIVERED},${OrderStatus.CONFIRMED},${OrderStatus.OUT_FOR_PICKUP},${OrderStatus.OUT_FOR_DELIVERY},${OrderStatus.READY_FOR_DELIVERY},${OrderStatus.PROCESSING},${OrderStatus.PICKUP_SCHEDULED}`
         }
       })
 
@@ -297,7 +299,8 @@ const createStyles = (colors: any) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background
+      backgroundColor: colors.background,
+      minHeight: '100%'
     },
     headerContainer: {
       paddingHorizontal: 16,

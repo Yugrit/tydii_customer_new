@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
+    "@notifee/react-native": "^9.1.8",
     "@react-native-community/cli": "^20.0.1",
     "@react-native-community/datetimepicker": "8.4.1",
     "@react-native-firebase/app": "^23.3.1",
@@ -48,6 +49,7 @@
     "react-native": "0.79.5",
     "react-native-calendars": "^1.1313.0",
     "react-native-date-picker": "^5.0.13",
+    "react-native-gesture-handler": "~2.24.0",
     "react-native-mmkv": "^3.3.0",
     "react-native-modal-datetime-picker": "^18.0.0",
     "react-native-nitro-modules": "^0.29.2",

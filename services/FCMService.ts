@@ -1,45 +1,53 @@
-// services/FCMService.js
 import ApiService from '@/services/ApiService'
 import { getData_MMKV, storeData_MMKV } from '@/services/StorageService'
+import notifee, { AndroidImportance } from '@notifee/react-native'
 import messaging from '@react-native-firebase/messaging'
 import { router } from 'expo-router'
 import { jwtDecode } from 'jwt-decode'
 import { Platform } from 'react-native'
 
 class FCMService {
-  fcmToken: string | null
-
-  constructor () {
-    this.fcmToken = null
-  }
+  fcmToken: string | null = null
 
   async initialize () {
-    try {
-      console.log('🔥 Initializing FCM Service...')
-      const hasPermission = await this.requestPermission()
+    console.log('🔥 Initializing FCM Service...')
+    await this.createNotificationChannel()
+    const hasPermission = await this.requestPermission()
 
-      if (hasPermission) {
-        await this.getFCMToken()
-        this.setupMessageHandlers()
-      }
-    } catch (error) {
-      console.error('❌ FCM Service initialization failed:', error)
+    if (hasPermission) {
+      await this.getFCMToken()
+      this.setupMessageHandlers()
     }
   }
 
-  async requestPermission () {
+  async createNotificationChannel () {
+    if (Platform.OS === 'android') {
+      await notifee.createChannel({
+        id: 'default',
+        name: 'Default Channel',
+        importance: AndroidImportance.HIGH
+      })
+    }
+  }
+
+  async requestPermission (): Promise<boolean> {
     try {
       const authStatus = await messaging().requestPermission({
-        sound: true,
+        alert: true,
         badge: true,
-        alert: true
+        sound: true
       })
 
       const enabled =
         authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
         authStatus === messaging.AuthorizationStatus.PROVISIONAL
 
-      console.log('📱 Permission status:', authStatus, 'Enabled:', enabled)
+      console.log(
+        '📱 Notification permission status:',
+        authStatus,
+        'Enabled:',
+        enabled
+      )
       return enabled
     } catch (error) {
       console.error('❌ Permission error:', error)
@@ -47,17 +55,14 @@ class FCMService {
     }
   }
 
-  async getFCMToken () {
+  async getFCMToken (): Promise<string | null> {
     try {
       const token = await messaging().getToken()
-      console.log('🎫 FCM Token:', token)
-
       if (token) {
         this.fcmToken = token
         storeData_MMKV('fcm-token', token)
-
-        // Send token to your backend
         await this.sendTokenToBackend(token)
+        console.log('🎫 FCM Token:', token)
         return token
       }
     } catch (error) {
@@ -66,25 +71,21 @@ class FCMService {
     return null
   }
 
-  async sendTokenToBackend (token: any) {
+  async sendTokenToBackend (token: string) {
     try {
-      // Get user ID from JWT token
-      const userToken = getData_MMKV('user-token')
+      const userToken = await getData_MMKV('user-token')
       let userId = null
-
       if (userToken) {
-        const decoded = jwtDecode(userToken)
+        const decoded: any = jwtDecode(userToken)
         userId = decoded.sub
       }
 
       console.log('📤 Sending FCM token to backend for user:', userId)
-
-      // Replace with your actual endpoint
       const response = await ApiService.post({
-        url: '/notification/device-token', // Your endpoint
+        url: '/notification/device-token',
         data: {
-          token: token,
-          userId: userId,
+          token,
+          userId,
           platform: Platform.OS
         }
       })
@@ -101,10 +102,10 @@ class FCMService {
     // Foreground messages
     messaging().onMessage(async remoteMessage => {
       console.log('📨 Foreground message:', remoteMessage)
-      this.showInAppNotification(remoteMessage)
+      this.showNotification(remoteMessage)
     })
 
-    // Background/quit state -> foreground
+    // Background/quit -> foreground
     messaging().onNotificationOpenedApp(remoteMessage => {
       console.log('📱 App opened from notification:', remoteMessage)
       this.handleNotificationTap(remoteMessage)
@@ -121,32 +122,39 @@ class FCMService {
       })
 
     // Token refresh
-    messaging().onTokenRefresh(token => {
+    messaging().onTokenRefresh(async token => {
       console.log('🔄 Token refreshed:', token)
       this.fcmToken = token
       storeData_MMKV('fcm-token', token)
-      this.sendTokenToBackend(token)
+      await this.sendTokenToBackend(token)
     })
   }
 
-  showInAppNotification (remoteMessage: any) {
-    // Show alert when app is in foreground
-    return
+  async showNotification (remoteMessage: any) {
+    const { notification } = remoteMessage
+    if (!notification) return
+
+    await notifee.displayNotification({
+      title: notification.title,
+      body: notification.body,
+      android: {
+        channelId: 'default',
+        smallIcon: 'ic_launcher' // Make sure this exists in res/mipmap
+      }
+    })
   }
 
   handleNotificationTap (remoteMessage: any) {
     console.log('👆 Notification tapped:', remoteMessage)
-
-    // Handle navigation based on your backend's notification data
-    router.push('./')
+    router.push('./') // Navigate to your desired screen
   }
 
-  // Utility methods
-  getCurrentToken () {
-    return this.fcmToken || getData_MMKV('fcm-token')
+  getCurrentToken (): string | null {
+    const storedToken = getData_MMKV('fcm-token')
+    return this.fcmToken ?? (storedToken === undefined ? null : storedToken)
   }
 
-  async refreshToken () {
+  async refreshToken (): Promise<string | null> {
     return await this.getFCMToken()
   }
 }

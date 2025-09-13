@@ -1,4 +1,10 @@
 // app/_layout.tsx - FIXED VERSION
+import ToastContainer from '@/components/ui/ToastContainer'
+import { userLoginState } from '@/Redux/slices/userSlices'
+import FCMService from '@/services/FCMService'
+import { getData_MMKV } from '@/services/StorageService'
+import '@react-native-firebase/app'
+import { getApp } from '@react-native-firebase/app'
 import {
   DarkTheme,
   DefaultTheme,
@@ -10,11 +16,9 @@ import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
 import React, { useEffect, useRef, useState } from 'react'
 import 'react-native-reanimated'
-import { Provider } from 'react-redux'
-
-import { userLoginState } from '@/Redux/slices/userSlices'
-import { getData_MMKV } from '@/services/StorageService'
+import { Provider, useDispatch } from 'react-redux'
 import store from '../Redux/Store'
+import './services/FCMBackgroundHandler'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -22,13 +26,22 @@ SplashScreen.preventAutoHideAsync()
 function AppContent () {
   const { useColorScheme } = require('@/hooks/useColorScheme') // Import inside component
   const { colorScheme } = useColorScheme()
+  const dispatch = useDispatch()
 
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf')
   })
 
   useEffect(() => {
-    // FCMService.initialize()
+    // firebase.initializeApp(firebaseConfig)
+    try {
+      const app = getApp() // ensures the default app exists
+      console.log('Firebase app initialized:', app.name)
+
+      FCMService.initialize() // your FCM logic
+    } catch (err) {
+      console.error('Firebase initialization error:', err)
+    }
   }, [])
 
   const [authState, setAuthState] = useState<
@@ -149,6 +162,7 @@ export default function RootLayout () {
   return (
     <Provider store={store}>
       <AppContent />
+      <ToastContainer></ToastContainer>
     </Provider>
   )
 }

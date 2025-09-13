@@ -1,6 +1,7 @@
 // components/FavouriteLaundry.tsx
 import StoreCard from '@/components/ui/storeCard'
 import { useThemeColors } from '@/hooks/useThemeColor'
+import { useToast } from '@/hooks/useToast'
 import ApiService from '@/services/ApiService'
 import { getData_MMKV } from '@/services/StorageService'
 import { jwtDecode } from 'jwt-decode'
@@ -52,6 +53,7 @@ export default function FavouriteLaundry () {
   const scrollX = useRef(new Animated.Value(0)).current
   const flatListRef = useRef<FlatList>(null)
   const currentIndex = useRef(0)
+  const toast = useToast()
 
   // State management
   const [laundryStores, setLaundryStores] = useState<LaundryStore[]>([])
@@ -220,6 +222,7 @@ export default function FavouriteLaundry () {
       }
 
       setLaundryStores([])
+      toast.error('Failed to fetch stores')
     } finally {
       setLoading(false)
     }

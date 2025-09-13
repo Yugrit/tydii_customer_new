@@ -1,3 +1,4 @@
+import Loader from '@/components/ui/Loader'
 import ServiceCard from '@/components/ui/MainCard'
 import StoreCard from '@/components/ui/storeCard'
 import { useThemeColors } from '@/hooks/useThemeColor'
@@ -366,7 +367,7 @@ export default function FavouriteScreen () {
           button={false}
         />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color={colors.primary} />
+          <Loader />
           <Text style={styles.loadingText}>Loading favourite stores...</Text>
         </View>
       </View>
@@ -447,7 +448,7 @@ const createStyles = (colors: any) =>
   StyleSheet.create({
     container: {
       marginVertical: 10,
-      backgroundColor: colors.surface
+      backgroundColor: colors.background
     },
     scrollView: {
       marginVertical: 10,

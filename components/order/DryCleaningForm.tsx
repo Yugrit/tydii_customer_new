@@ -1,6 +1,7 @@
 // components/order/forms/DrycleaningForm.tsx
 import { ServiceTypeEnum } from '@/enums'
 import { useThemeColors } from '@/hooks/useThemeColor'
+import { useToast } from '@/hooks/useToast'
 import {
   updateSelectedClothes,
   updateStorePrices
@@ -138,6 +139,7 @@ export default function DrycleaningForm ({
 }: DrycleaningFormProps) {
   const dispatch = useDispatch()
   const colors = useThemeColors()
+  const toast = useToast()
 
   // Get store flow data from Redux
   const { isStoreFlow, orderData } = useSelector(
@@ -277,6 +279,7 @@ export default function DrycleaningForm ({
         // Do not set fallback data - leave arrays empty
         setClothNames([])
         setClothCategories([])
+        toast.error('Failed to fetch clothes')
       } finally {
         setLoading(false)
       }

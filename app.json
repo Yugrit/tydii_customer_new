@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.TydiiCustomer"
+      "bundleIdentifier": "com.tydii.customer"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +19,7 @@
         "resizeMode": "contain"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.TydiiCustomer"
+      "package": "com.tydii.customer"
     },
     "web": {
       "bundler": "metro",

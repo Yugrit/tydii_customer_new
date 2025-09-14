@@ -1,5 +1,10 @@
+import LogoutModal from '@/components/ui/LogoutModal' // Add this import
 import { useColorScheme } from '@/hooks/useColorScheme'
 import { useThemeColors } from '@/hooks/useThemeColor'
+import { useToast } from '@/hooks/useToast'
+import { showToast } from '@/Redux/slices/toastSlice' // Add this import
+import { userLoginState } from '@/Redux/slices/userSlices'
+import { clearStorage_MMKV } from '@/services/StorageService'
 import { useRouter } from 'expo-router'
 import {
   ChevronRight,
@@ -10,7 +15,7 @@ import {
   Sun,
   User
 } from 'lucide-react-native'
-import React from 'react'
+import React, { useState } from 'react'
 import {
   ScrollView,
   StyleSheet,
@@ -19,11 +24,16 @@ import {
   TouchableOpacity,
   View
 } from 'react-native'
+import { useDispatch } from 'react-redux'
 
 export default function AccountSettingScreen () {
   const router = useRouter()
   const { isDark, setColorScheme } = useColorScheme()
   const colors = useThemeColors()
+  const dispatch = useDispatch()
+  const toast = useToast()
+  // State for logout modal
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
 
   const settingsOptions = [
     {
@@ -55,9 +65,52 @@ export default function AccountSettingScreen () {
     }
   ]
 
+  const handleLogout = () => {
+    // Show custom modal instead of Alert
+    setShowLogoutModal(true)
+  }
+
+  const confirmLogout = async () => {
+    try {
+      // Close modal first
+      setShowLogoutModal(false)
+
+      // Perform logout
+      dispatch(userLoginState({ token: '', isApproved: false, user: null }))
+      clearStorage_MMKV()
+
+      // Show success toast
+      toast.success('Logged Out')
+
+      // Navigate to login
+      router.replace('/auth/login')
+    } catch (error) {
+      // Show error toast
+
+      toast.error('Logout Failed')
+
+      console.error('Logout error:', error)
+    }
+  }
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false)
+  }
+
   // Dark mode toggle handler
   const handleDarkModeToggle = (value: boolean) => {
-    setColorScheme(value ? 'dark' : 'light')
+    try {
+      setColorScheme(value ? 'dark' : 'light')
+
+      // Show toast for theme change
+    } catch (error) {
+      dispatch(
+        showToast({
+          message: 'Failed to change theme',
+          type: 'error'
+        })
+      )
+    }
   }
 
   const renderSettingItem = (item: any) => {
@@ -140,12 +193,7 @@ export default function AccountSettingScreen () {
       <TouchableOpacity
         key='logout'
         style={styles.settingItem}
-        onPress={() => {
-          console.log('Log out user')
-          // Handle logout logic
-          // dispatch(logout())
-          // router.replace('/login')
-        }}
+        onPress={handleLogout}
         activeOpacity={0.7}
       >
         <View style={styles.settingItemLeft}>
@@ -169,62 +217,75 @@ export default function AccountSettingScreen () {
   }
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-    >
-      <View style={[styles.content, { backgroundColor: colors.background }]}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>
-            Account{' '}
-            <Text style={[styles.titleAccent, { color: colors.primary }]}>
-              Setting
+    <>
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
+        <View style={[styles.content, { backgroundColor: colors.background }]}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: colors.text }]}>
+              Account{' '}
+              <Text style={[styles.titleAccent, { color: colors.primary }]}>
+                Setting
+              </Text>
             </Text>
-          </Text>
+            <View
+              style={[styles.underline, { backgroundColor: colors.primary }]}
+            />
+          </View>
+
+          {/* Settings Card */}
           <View
-            style={[styles.underline, { backgroundColor: colors.primary }]}
-          />
+            style={[
+              styles.settingsCard,
+              {
+                backgroundColor: colors.background,
+                shadowColor: isDark ? colors.text : '#000'
+              }
+            ]}
+          >
+            {/* Regular Settings */}
+            {settingsOptions.map((item, index) => (
+              <View key={item.id}>
+                {renderSettingItem(item)}
+                {index < settingsOptions.length - 1 && (
+                  <View
+                    style={[
+                      styles.separator,
+                      { backgroundColor: colors.border }
+                    ]}
+                  />
+                )}
+              </View>
+            ))}
+
+            {/* Dark Mode Toggle */}
+            <View
+              style={[styles.separator, { backgroundColor: colors.border }]}
+            />
+            {renderDarkModeToggle()}
+
+            {/* Logout */}
+            <View
+              style={[styles.separator, { backgroundColor: colors.border }]}
+            />
+            {renderLogoutItem()}
+          </View>
         </View>
+      </ScrollView>
 
-        {/* Settings Card */}
-        <View
-          style={[
-            styles.settingsCard,
-            {
-              backgroundColor: colors.background,
-              shadowColor: isDark ? colors.text : '#000'
-            }
-          ]}
-        >
-          {/* Regular Settings */}
-          {settingsOptions.map((item, index) => (
-            <View key={item.id}>
-              {renderSettingItem(item)}
-              {index < settingsOptions.length - 1 && (
-                <View
-                  style={[styles.separator, { backgroundColor: colors.border }]}
-                />
-              )}
-            </View>
-          ))}
-
-          {/* Dark Mode Toggle */}
-          <View
-            style={[styles.separator, { backgroundColor: colors.border }]}
-          />
-          {renderDarkModeToggle()}
-
-          {/* Logout */}
-          <View
-            style={[styles.separator, { backgroundColor: colors.border }]}
-          />
-          {renderLogoutItem()}
-        </View>
-      </View>
-    </ScrollView>
+      {/* Custom Logout Modal */}
+      <LogoutModal
+        visible={showLogoutModal}
+        onConfirm={confirmLogout}
+        onCancel={cancelLogout}
+      />
+    </>
   )
 }
 
+// Styles remain the same...
 const styles = StyleSheet.create({
   container: {
     flex: 1
@@ -290,7 +351,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    marginLeft: 76, // Align with text, accounting for icon space
+    marginLeft: 76,
     marginRight: 20
   }
 })

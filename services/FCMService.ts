@@ -1,6 +1,6 @@
 import ApiService from '@/services/ApiService'
 import { getData_MMKV, storeData_MMKV } from '@/services/StorageService'
-import notifee, { AndroidImportance } from '@notifee/react-native'
+// import notifee, { AndroidImportance } from '@notifee/react-native'
 import messaging from '@react-native-firebase/messaging'
 import { router } from 'expo-router'
 import { jwtDecode } from 'jwt-decode'
@@ -11,22 +11,12 @@ class FCMService {
 
   async initialize () {
     console.log('🔥 Initializing FCM Service...')
-    await this.createNotificationChannel()
+
     const hasPermission = await this.requestPermission()
 
     if (hasPermission) {
       await this.getFCMToken()
       this.setupMessageHandlers()
-    }
-  }
-
-  async createNotificationChannel () {
-    if (Platform.OS === 'android') {
-      await notifee.createChannel({
-        id: 'default',
-        name: 'Default Channel',
-        importance: AndroidImportance.HIGH
-      })
     }
   }
 
@@ -133,15 +123,6 @@ class FCMService {
   async showNotification (remoteMessage: any) {
     const { notification } = remoteMessage
     if (!notification) return
-
-    await notifee.displayNotification({
-      title: notification.title,
-      body: notification.body,
-      android: {
-        channelId: 'default',
-        smallIcon: 'ic_launcher' // Make sure this exists in res/mipmap
-      }
-    })
   }
 
   handleNotificationTap (remoteMessage: any) {

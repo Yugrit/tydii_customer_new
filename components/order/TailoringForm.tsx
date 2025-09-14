@@ -1,6 +1,7 @@
 // components/order/forms/TailoringForm.tsx
 import { ServiceTypeEnum } from '@/enums'
 import { useThemeColors } from '@/hooks/useThemeColor'
+import { useToast } from '@/hooks/useToast'
 import {
   updateSelectedClothes,
   updateStorePrices
@@ -218,6 +219,8 @@ export default function TailoringForm ({
     )
   }, [storePrices])
 
+  const toast = useToast()
+
   // Conditional fetch based on store flow
   useEffect(() => {
     const fetchAllDropdownData = async () => {
@@ -373,6 +376,7 @@ export default function TailoringForm ({
         setClothNames([])
         setClothCategories([])
         setTailoringTypes([])
+        toast.error('Failed to fetch clothes')
       } finally {
         setLoading(false)
       }

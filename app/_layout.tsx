@@ -18,7 +18,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import 'react-native-reanimated'
 import { Provider, useDispatch } from 'react-redux'
 import store from '../Redux/Store'
-import './services/FCMBackgroundHandler'
+// import './services/FCMBackgroundHandler'
 
 SplashScreen.preventAutoHideAsync()
 

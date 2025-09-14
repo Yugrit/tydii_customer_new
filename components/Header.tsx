@@ -1,7 +1,6 @@
 // components/CustomHeader.tsx
 import React from 'react'
 import {
-  Alert,
   Image,
   StatusBar,
   StyleSheet,
@@ -10,9 +9,7 @@ import {
   View
 } from 'react-native'
 // Import Lucide icons
-import { userLoginState } from '@/Redux/slices/userSlices'
 import { RootState } from '@/Redux/Store'
-import { clearStorage_MMKV } from '@/services/StorageService'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import { Bell, User } from 'lucide-react-native'
@@ -40,29 +37,8 @@ export default function CustomHeader ({
     }
   }
 
-  const handleLogout = async () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            dispatch(
-              userLoginState({ token: '', isApproved: false, user: null })
-            )
-            clearStorage_MMKV()
-            router.replace('/auth/login')
-          } catch (error) {
-            Alert.alert('Error', 'Logout failed')
-          }
-        }
-      }
-    ])
-  }
-
   const handleProfilePress = () => {
-    handleLogout()
+    router.push('./(setting)/profile')
   }
   return (
     <>

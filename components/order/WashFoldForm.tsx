@@ -1,6 +1,7 @@
 // components/order/forms/WashFoldForm.tsx
 import { ServiceTypeEnum } from '@/enums'
 import { useThemeColors } from '@/hooks/useThemeColor'
+import { useToast } from '@/hooks/useToast'
 import {
   updateSelectedClothes,
   updateStorePrices
@@ -45,7 +46,7 @@ const ClothingCounter = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [inputValue, setInputValue] = useState(value.toString())
-
+  const toast = useToast()
   // Update input value when external value changes
   useEffect(() => {
     if (!isEditing) {
@@ -176,6 +177,7 @@ export default function WashFoldForm ({
 }: WashFoldFormProps) {
   const dispatch = useDispatch()
   const colors = useThemeColors()
+  const toast = useToast()
 
   // Get store flow data from Redux
   const { isStoreFlow, orderData } = useSelector(
@@ -261,6 +263,8 @@ export default function WashFoldForm ({
         console.error('❌ Failed to fetch cloth names:', apiError)
         setError('Failed to load cloth types')
         setClothNames(['Mix Cloth', 'Household Cloth', 'Door Mats', 'Curtains'])
+        toast.error('Failed to fetch cloths')
+        toast
       } finally {
         setLoading(false)
       }

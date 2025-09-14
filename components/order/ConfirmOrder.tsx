@@ -1,6 +1,7 @@
 // components/order/forms/ConfirmOrderForm.tsx
 import { ServiceTypeEnum } from '@/enums'
 import { useThemeColors } from '@/hooks/useThemeColor'
+import { useToast } from '@/hooks/useToast'
 import { createOrderPayload, updateOrderData } from '@/Redux/slices/orderSlice'
 import { RootState } from '@/Redux/Store'
 import ApiService from '@/services/ApiService'
@@ -20,6 +21,7 @@ import {
   View
 } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
+import AddOnsSelector, { SelectedAddOn } from './AddOnSelector'
 
 interface ConfirmOrderFormProps {
   serviceType: ServiceTypeEnum
@@ -164,10 +166,64 @@ const PaymentConfirmationModal = ({
 }: {
   visible: boolean
   onCancel: () => void
-  onConfirm: () => void
+  onConfirm: (paymentDetails?: {
+    orderTotal: number
+    tipAmount: number
+    finalTotal: number
+  }) => void
   total: number
   colors: any
 }) => {
+  const [selectedTip, setSelectedTip] = useState<number>(0)
+  const [customTip, setCustomTip] = useState<string>('')
+  const [showCustomTip, setShowCustomTip] = useState<boolean>(false)
+
+  const tipOptions = [
+    { label: '$5', value: 5 },
+    { label: '$10', value: 10 },
+    { label: '$15', value: 15 },
+    { label: '$20', value: 20 }
+  ]
+
+  const finalTotal =
+    total +
+    selectedTip +
+    (showCustomTip && customTip ? parseFloat(customTip) || 0 : 0)
+  const totalTip =
+    selectedTip + (showCustomTip && customTip ? parseFloat(customTip) || 0 : 0)
+
+  const handleTipSelect = (tipValue: number) => {
+    if (tipValue === selectedTip) {
+      setSelectedTip(0)
+      return
+    }
+    setSelectedTip(tipValue)
+    setShowCustomTip(false)
+    setCustomTip('')
+  }
+
+  const handleCustomTipToggle = () => {
+    setShowCustomTip(!showCustomTip)
+    setSelectedTip(0)
+    setCustomTip('')
+  }
+
+  const handleCustomTipChange = (value: string) => {
+    // Only allow numbers and decimal point
+    const numericValue = value.replace(/[^0-9.]/g, '')
+    setCustomTip(numericValue)
+    setSelectedTip(0)
+  }
+
+  const handleConfirm = () => {
+    // Pass the tip amount along with confirmation
+    onConfirm({
+      orderTotal: total,
+      tipAmount: totalTip,
+      finalTotal: finalTotal
+    })
+  }
+
   const styles = createModalStyles(colors)
 
   return (
@@ -180,23 +236,133 @@ const PaymentConfirmationModal = ({
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Confirm Payment</Text>
-          <Text style={styles.modalMessage}>
-            Do you want to proceed to pay ${total.toFixed(2)}?
-          </Text>
 
+          {/* Order Total */}
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Order Total:</Text>
+            <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
+          </View>
+
+          {/* Tip Section */}
+          <View style={styles.tipSection}>
+            <Text style={styles.tipTitle}>Add tip for delivery partner</Text>
+            <Text style={styles.tipSubtitle}>
+              Your generosity is appreciated
+            </Text>
+
+            {/* Tip Options */}
+            <View style={styles.tipOptionsContainer}>
+              {tipOptions.map(option => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[
+                    styles.tipOption,
+                    selectedTip === option.value && styles.tipOptionSelected
+                  ]}
+                  onPress={() => handleTipSelect(option.value)}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.tipOptionText,
+                      selectedTip === option.value &&
+                        styles.tipOptionTextSelected
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Custom Tip Toggle
+            <TouchableOpacity
+              style={styles.customTipToggle}
+              onPress={handleCustomTipToggle}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.customTipToggleText}>
+                {showCustomTip ? 'Hide Custom Amount' : 'Add Custom Amount'}
+              </Text>
+            </TouchableOpacity>
+
+            Custom Tip Input
+            {showCustomTip && (
+              <View style={styles.customTipContainer}>
+                <Text style={styles.customTipLabel}>Enter custom tip:</Text>
+                <TextInput
+                  style={styles.customTipInput}
+                  placeholder='0.00'
+                  placeholderTextColor={colors.textSecondary}
+                  value={customTip}
+                  onChangeText={handleCustomTipChange}
+                  keyboardType='decimal-pad'
+                  maxLength={6}
+                />
+              </View>
+            )} */}
+
+            {/* No Tip Option
+            <TouchableOpacity
+              style={[
+                styles.noTipOption,
+                selectedTip === 0 &&
+                  !showCustomTip &&
+                  styles.noTipOptionSelected
+              ]}
+              onPress={() => {
+                setSelectedTip(0)
+                setShowCustomTip(false)
+                setCustomTip('')
+              }}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.noTipText,
+                  selectedTip === 0 &&
+                    !showCustomTip &&
+                    styles.noTipTextSelected
+                ]}
+              >
+                No tip
+              </Text>
+            </TouchableOpacity> */}
+          </View>
+
+          {/* Tip Summary */}
+          {totalTip > 0 && (
+            <View style={styles.tipSummary}>
+              <Text style={styles.tipSummaryText}>
+                Tip: ${totalTip.toFixed(2)}
+              </Text>
+            </View>
+          )}
+
+          {/* Final Total */}
+          <View style={styles.finalTotalRow}>
+            <Text style={styles.finalTotalLabel}>Total to Pay:</Text>
+            <Text style={styles.finalTotalValue}>${finalTotal.toFixed(2)}</Text>
+          </View>
+
+          {/* Action Buttons */}
           <View style={styles.modalButtons}>
             <TouchableOpacity
               style={styles.modalCancelButton}
               onPress={onCancel}
+              activeOpacity={0.8}
             >
               <Text style={styles.modalCancelText}>Cancel</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.modalConfirmButton}
-              onPress={onConfirm}
+              onPress={handleConfirm}
+              activeOpacity={0.8}
             >
-              <Text style={styles.modalConfirmText}>Proceed to Pay</Text>
+              <Text style={styles.modalConfirmText}>
+                Pay ${finalTotal.toFixed(2)}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -349,6 +515,32 @@ export default function ConfirmOrderForm ({
     useState<PaymentBreakdown | null>(null)
   const [loadingBreakdown, setLoadingBreakdown] = useState(false)
   const [breakdownError, setBreakdownError] = useState<string | null>(null)
+
+  const [selectedAddOns, setSelectedAddOns] = useState<SelectedAddOn[]>([])
+
+  const addOnsTotal = useMemo(() => {
+    return selectedAddOns.reduce((total, { addOn, quantity }) => {
+      return total + addOn.pricePerQuantity * quantity
+    }, 0)
+  }, [selectedAddOns])
+
+  const handleAddOnsChange = (addOns: SelectedAddOn[]) => {
+    setSelectedAddOns(addOns)
+    const newAddOnsTotal = addOns.reduce((total, { addOn, quantity }) => {
+      return total + addOn.pricePerQuantity * quantity
+    }, 0)
+
+    const newTotalWithAddOns = orderTotal + newAddOnsTotal
+
+    console.log('💰 New total with add-ons:', newTotalWithAddOns)
+
+    // Refetch payment breakdown with new total
+    if (appliedCoupon) {
+      fetchPaymentBreakdown(newTotalWithAddOns, appliedCoupon.code)
+    } else {
+      fetchPaymentBreakdown(newTotalWithAddOns)
+    }
+  }
 
   // Get order total from Redux
   const orderTotal = orderData.paymentBreakdown?.orderAmount || 0
@@ -535,6 +727,8 @@ export default function ConfirmOrderForm ({
     onPrev()
   }
 
+  const toast = useToast()
+
   // Fetch applicable coupons from API
   const fetchApplicableCoupons = async () => {
     if (!orderData.selectedStore || !userData || orderTotal <= 0) {
@@ -559,6 +753,7 @@ export default function ConfirmOrderForm ({
     } catch (error) {
       console.error('❌ Failed to fetch coupons:', error)
       setAvailableCoupons([])
+      toast.error('Failed to fetch coupons')
     } finally {
       setLoadingCoupons(false)
     }
@@ -598,6 +793,8 @@ export default function ConfirmOrderForm ({
       console.error('❌ Failed to fetch payment breakdown:', error)
       setBreakdownError('Failed to load payment breakdown')
 
+      toast.error('Failed to fetch payment details')
+
       // Set fallback breakdown if API fails
       setPaymentBreakdown({
         orderAmount: orderAmount,
@@ -616,7 +813,7 @@ export default function ConfirmOrderForm ({
 
   // Fetch breakdown and coupons when component mounts or when orderTotal changes
   useEffect(() => {
-    fetchPaymentBreakdown(orderTotal)
+    fetchPaymentBreakdown(orderTotal + addOnsTotal)
     if (!appliedCoupon) {
       fetchApplicableCoupons()
     }
@@ -630,7 +827,7 @@ export default function ConfirmOrderForm ({
       setShowCouponModal(false)
 
       // Re-fetch breakdown with coupon
-      fetchPaymentBreakdown(orderTotal, selectedCoupon.code)
+      fetchPaymentBreakdown(orderTotal + addOnsTotal, selectedCoupon.code)
     }
   }
 
@@ -656,7 +853,7 @@ export default function ConfirmOrderForm ({
       }
 
       // Re-fetch breakdown with coupon
-      fetchPaymentBreakdown(orderTotal, couponCode)
+      fetchPaymentBreakdown(orderTotal + addOnsTotal, couponCode)
     }
   }
 
@@ -666,18 +863,31 @@ export default function ConfirmOrderForm ({
     setCouponCode('')
     setSelectedCoupon(null)
     // Re-fetch breakdown without coupon
-    fetchPaymentBreakdown(orderTotal)
+    fetchPaymentBreakdown(orderTotal + addOnsTotal)
     // Re-fetch available coupons
     fetchApplicableCoupons()
   }
 
   // Handle payment confirmation with order creation API
-  const handlePaymentConfirm = async () => {
+  // Update this function to handle the tip information
+  const handlePaymentConfirm = async (paymentDetails?: {
+    orderTotal: number
+    tipAmount: number
+    finalTotal: number
+  }) => {
     try {
       setIsProcessing(true)
       setShowPaymentModal(false)
 
-      console.log('💳 Creating order with API...')
+      console.log('💳 Creating order with API...', {
+        originalTotal:
+          paymentDetails?.orderTotal ||
+          (paymentBreakdown ? paymentBreakdown.finalPayable : orderTotal),
+        tipAmount: paymentDetails?.tipAmount || 0,
+        finalTotal:
+          paymentDetails?.finalTotal ||
+          (paymentBreakdown ? paymentBreakdown.finalPayable : orderTotal)
+      })
 
       // Get the created order payload from Redux
       const createOrderPayloadData = orderData.createOrderPayload
@@ -688,12 +898,21 @@ export default function ConfirmOrderForm ({
         return
       }
 
-      console.log('📤 Sending order payload:', createOrderPayloadData)
+      // Add tip information to the payload
+      const finalPayload = {
+        ...createOrderPayloadData,
+        // tipAmount: paymentDetails?.tipAmount || 0,
+        total_amount:
+          paymentDetails?.finalTotal ||
+          (paymentBreakdown ? paymentBreakdown.finalPayable : orderTotal)
+      }
+
+      console.log('📤 Sending order payload with tip:', finalPayload)
 
       // Call the order creation API
       const response = await ApiService.post({
         url: '/customer/orders/create',
-        data: createOrderPayloadData
+        data: finalPayload
       })
 
       console.log('✅ Order created successfully:', response)
@@ -717,6 +936,7 @@ export default function ConfirmOrderForm ({
     } catch (error) {
       console.error('❌ Order creation failed:', error)
       setIsProcessing(false)
+      toast.error('Failed to create order')
     }
   }
 
@@ -759,11 +979,33 @@ export default function ConfirmOrderForm ({
             </View>
           </View>
 
+          <AddOnsSelector
+            storeId={orderData.selectedStore?.store_id}
+            serviceType={serviceType}
+            selectedAddOns={selectedAddOns}
+            onAddOnsChange={handleAddOnsChange}
+            disabled={isProcessing || loadingBreakdown}
+          />
+
           {/* Subtotal */}
           <View style={styles.subtotalSection}>
             <View style={styles.feeRow}>
-              <Text style={styles.feeLabel}>Subtotal</Text>
+              <Text style={styles.feeLabel}>Services Subtotal</Text>
               <Text style={styles.feeValue}>${orderTotal.toFixed(2)}</Text>
+            </View>
+
+            {addOnsTotal > 0 && (
+              <View style={styles.feeRow}>
+                <Text style={styles.feeLabel}>Add Ons</Text>
+                <Text style={styles.feeValue}>${addOnsTotal.toFixed(2)}</Text>
+              </View>
+            )}
+
+            <View style={[styles.feeRow, styles.subtotalRow]}>
+              <Text style={styles.subtotalLabel}>Subtotal</Text>
+              <Text style={styles.subtotalValue}>
+                ${(orderTotal + addOnsTotal).toFixed(2)}
+              </Text>
             </View>
           </View>
 
@@ -1040,6 +1282,22 @@ const createMainStyles = (colors: any) =>
       borderTopColor: colors.border,
       paddingHorizontal: 4
     },
+    subtotalRow: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      marginTop: 8,
+      paddingTop: 12
+    },
+    subtotalLabel: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text
+    },
+    subtotalValue: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text
+    },
 
     // Fees Section
     feesSection: {
@@ -1299,6 +1557,7 @@ const createStoreInfoStyles = (colors: any) =>
   })
 
 // Modal styles
+// Update the createModalStyles function
 const createModalStyles = (colors: any) =>
   StyleSheet.create({
     modalOverlay: {
@@ -1314,7 +1573,7 @@ const createModalStyles = (colors: any) =>
       borderRadius: 16,
       width: '100%',
       maxWidth: 400,
-      alignItems: 'center',
+      maxHeight: '80%',
       elevation: 10,
       shadowColor: colors.text,
       shadowOffset: { width: 0, height: 4 },
@@ -1327,23 +1586,171 @@ const createModalStyles = (colors: any) =>
       fontSize: 20,
       fontWeight: '700',
       color: colors.text,
-      marginBottom: 12,
-      textAlign: 'center',
-      flexShrink: 1
+      marginBottom: 20,
+      textAlign: 'center'
     },
-    modalMessage: {
+
+    // Order Total
+    totalRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border
+    },
+    totalLabel: {
       fontSize: 16,
-      color: colors.textSecondary,
-      textAlign: 'center',
-      marginBottom: 24,
-      lineHeight: 22,
-      flexShrink: 1,
-      paddingHorizontal: 4
+      color: colors.text,
+      fontWeight: '500'
     },
+    totalValue: {
+      fontSize: 16,
+      color: colors.text,
+      fontWeight: '600'
+    },
+
+    // Tip Section
+    tipSection: {
+      marginBottom: 20
+    },
+    tipTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 4
+    },
+    tipSubtitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 16
+    },
+    tipOptionsContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+      marginBottom: 16
+    },
+    tipOption: {
+      flex: 1,
+      minWidth: 70,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      alignItems: 'center'
+    },
+    tipOptionSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary
+    },
+    tipOptionText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text
+    },
+    tipOptionTextSelected: {
+      color: colors.background
+    },
+
+    // Custom Tip
+    customTipToggle: {
+      alignItems: 'center',
+      paddingVertical: 8,
+      marginBottom: 12
+    },
+    customTipToggleText: {
+      fontSize: 14,
+      color: colors.primary,
+      fontWeight: '500',
+      textDecorationLine: 'underline'
+    },
+    customTipContainer: {
+      marginBottom: 16
+    },
+    customTipLabel: {
+      fontSize: 14,
+      color: colors.text,
+      marginBottom: 8,
+      fontWeight: '500'
+    },
+    customTipInput: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      fontSize: 16,
+      color: colors.text,
+      backgroundColor: colors.background,
+      textAlign: 'center'
+    },
+
+    // No Tip Option
+    noTipOption: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      paddingVertical: 10,
+      alignItems: 'center'
+    },
+    noTipOptionSelected: {
+      backgroundColor: colors.light,
+      borderColor: colors.primary
+    },
+    noTipText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      fontWeight: '500'
+    },
+    noTipTextSelected: {
+      color: colors.text,
+      fontWeight: '600'
+    },
+
+    // Tip Summary
+    tipSummary: {
+      backgroundColor: colors.light,
+      padding: 12,
+      borderRadius: 8,
+      marginBottom: 16,
+      alignItems: 'center'
+    },
+    tipSummaryText: {
+      fontSize: 14,
+      color: colors.primary,
+      fontWeight: '600'
+    },
+
+    // Final Total
+    finalTotalRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 24,
+      paddingTop: 16,
+      borderTopWidth: 2,
+      borderTopColor: colors.border
+    },
+    finalTotalLabel: {
+      fontSize: 18,
+      color: colors.text,
+      fontWeight: '600'
+    },
+    finalTotalValue: {
+      fontSize: 20,
+      color: colors.text,
+      fontWeight: '700'
+    },
+
+    // Action Buttons
     modalButtons: {
       flexDirection: 'row',
-      gap: 16,
-      width: '100%'
+      gap: 16
     },
     modalCancelButton: {
       flex: 1,
@@ -1353,8 +1760,7 @@ const createModalStyles = (colors: any) =>
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
-      alignItems: 'center',
-      justifyContent: 'center'
+      alignItems: 'center'
     },
     modalConfirmButton: {
       flex: 1,
@@ -1362,20 +1768,17 @@ const createModalStyles = (colors: any) =>
       paddingHorizontal: 16,
       borderRadius: 8,
       backgroundColor: colors.primary,
-      alignItems: 'center',
-      justifyContent: 'center'
+      alignItems: 'center'
     },
     modalCancelText: {
       fontSize: 16,
       fontWeight: '600',
-      color: colors.textSecondary,
-      textAlign: 'center'
+      color: colors.textSecondary
     },
     modalConfirmText: {
       fontSize: 16,
       fontWeight: '600',
-      color: colors.background,
-      textAlign: 'center'
+      color: colors.background
     }
   })
 

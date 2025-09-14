@@ -1,5 +1,6 @@
 // components/order/forms/StoreSelectionForm.tsx
 import { useThemeColors } from '@/hooks/useThemeColor'
+import { useToast } from '@/hooks/useToast'
 import {
   updateItemPrices,
   updatePaymentBreakdown,
@@ -286,6 +287,8 @@ export default function StoreSelectionForm ({
     return payload
   }
 
+  const toast = useToast()
+
   // Load stores from API
   useEffect(() => {
     const loadStores = async () => {
@@ -366,6 +369,7 @@ export default function StoreSelectionForm ({
         console.error('❌ Failed to load stores:', error)
         setErrors({ general: 'Failed to load stores. Please try again.' })
         setStores([])
+        toast.error('Failed to fetch Stores')
       } finally {
         setLoading(false)
       }

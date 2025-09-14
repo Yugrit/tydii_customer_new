@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "748863930928",
+    "project_id": "inappnotification-bcf83",
+    "storage_bucket": "inappnotification-bcf83.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:748863930928:android:863bb1669c018364d123f5",
+        "android_client_info": {
+          "package_name": "com.tydii.customer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZfxDRvRJ9W-SN92eHd4sSzdr93lNM-sY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

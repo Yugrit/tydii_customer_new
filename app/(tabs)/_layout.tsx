@@ -2,11 +2,10 @@
 import Header from '@/components/Header'
 import { router, Tabs } from 'expo-router'
 import { Heart, Home, Settings, ShoppingBag, User } from 'lucide-react-native'
-import React from 'react'
 
 export default function TabsLayout () {
   const onNotificationPress = () => {
-    router.replace('./(setting)/notification')
+    router.push('./(setting)')
   }
 
   return (
@@ -64,6 +63,12 @@ export default function TabsLayout () {
         options={{
           tabBarLabel: 'Settings',
           title: 'Settings'
+        }}
+        listeners={{
+          tabPress: e => {
+            e.preventDefault() // stop default navigation
+            router.replace('/(tabs)/(setting)') // always reset to index
+          }
         }}
       />
     </Tabs>

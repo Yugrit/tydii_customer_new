@@ -1,4 +1,7 @@
 import { useThemeColors } from '@/hooks/useThemeColor'
+import { useToast } from '@/hooks/useToast'
+import { updateUserData } from '@/Redux/slices/userSlices'
+import { updateUserAddresses } from '@/services/AddressService'
 import { useRouter } from 'expo-router'
 import {
   Building,
@@ -8,7 +11,7 @@ import {
   Plus,
   Trash2
 } from 'lucide-react-native'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Alert,
   FlatList,
@@ -18,25 +21,29 @@ import {
   TouchableOpacity,
   View
 } from 'react-native'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 
 export default function ManageAddressScreen () {
   const router = useRouter()
   const colors = useThemeColors()
+  const dispatch = useDispatch()
+  const toast = useToast()
 
-  // Get user data from Redux (assuming addresses are stored in user state)
+  // Get user data from Redux
   const user = useSelector((state: any) => state.user.userData)
 
   const [addresses, setAddresses] = useState([])
+  const [loading, setLoading] = useState(false)
 
   // Initialize addresses from user data
   useEffect(() => {
     if (user?.addresses) {
       // Filter out deleted addresses and transform data
       const transformedAddresses = user.addresses
-        .filter((addr: any) => !addr.is_deleted && addr.deleted_at === null)
+        .filter((addr: any) => !addr.latlong?.is_deleted)
         .map((addr: any) => ({
           id: addr.id,
+          shop_id: addr.shop_id,
           addressType: addr.address_type,
           houseNo: addr.house_no,
           streetAddress: addr.street_address,
@@ -45,8 +52,9 @@ export default function ManageAddressScreen () {
           zipcode: addr.zipcode,
           landmark: addr.landmark,
           isPrimary: addr.is_primary,
-          latitude: addr.latlongs?.latitude,
-          longitude: addr.latlongs?.longitude,
+          latLongId: addr.latlong?.id,
+          latitude: addr.latlong?.latitude,
+          longitude: addr.latlong?.longitude,
           createdAt: addr.created_at
         }))
 
@@ -94,6 +102,28 @@ export default function ManageAddressScreen () {
     }
   }
 
+  // Transform local address back to API format
+  const transformToApiFormat = (localAddresses: any[]) => {
+    return localAddresses.map(addr => ({
+      id: addr.id,
+      shop_id: addr.shop_id || 101, // Default shop_id
+      house_no: addr.houseNo,
+      street_address: addr.streetAddress,
+      landmark: addr.landmark || '',
+      city: addr.city,
+      address_type: addr.addressType,
+      state: addr.state,
+      zipcode: addr.zipcode,
+      is_primary: addr.isPrimary,
+      latlong: {
+        id: addr.latLongId,
+        latitude: addr.latitude || 0,
+        longitude: addr.longitude || 0,
+        is_deleted: false
+      }
+    }))
+  }
+
   const handleAddNewAddress = () => {
     console.log('Add new address')
     router.push('/add-address')
@@ -116,26 +146,88 @@ export default function ManageAddressScreen () {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            // TODO: Call API to delete address
-            // dispatch(deleteAddress(id))
-            setAddresses(prev => prev.filter((addr: any) => addr.id !== id))
+          onPress: async () => {
+            if (loading) return
+
+            setLoading(true)
+            try {
+              console.log('🗑️ Deleting address:', id)
+
+              // Transform current addresses to API format
+              const apiAddresses = transformToApiFormat(addresses)
+
+              // Call the address service to delete
+              const updatedAddresses = await updateUserAddresses(
+                user.id,
+                apiAddresses,
+                { type: 'delete', addressId: id }
+              )
+
+              console.log('✅ Address deleted successfully')
+
+              // Update Redux state
+              dispatch(
+                updateUserData({
+                  ...user,
+                  addresses: updatedAddresses
+                })
+              )
+
+              // Show success toast
+              toast.success('Address deleted successfully')
+            } catch (error) {
+              console.error('❌ Failed to delete address:', error)
+              toast.error('Failed to delete address. Please try again.')
+            } finally {
+              setLoading(false)
+            }
           }
         }
       ]
     )
   }
 
-  const handleSetPrimary = (id: number) => {
-    // TODO: Call API to update primary address
-    // dispatch(updatePrimaryAddress(id))
+  const handleSetPrimary = async (id: number) => {
+    if (loading) return
 
-    setAddresses((prev: any) =>
-      prev.map((addr: any) => ({
-        ...addr,
-        isPrimary: addr.id === id
-      }))
-    )
+    // Don't do anything if it's already primary
+    const currentAddress: any = addresses.find((addr: any) => addr.id === id)
+    if (currentAddress?.isPrimary) {
+      return
+    }
+
+    setLoading(true)
+    try {
+      console.log('🏠 Setting primary address:', id)
+
+      // Transform current addresses to API format
+      const apiAddresses = transformToApiFormat(addresses)
+
+      // Call the address service to set primary
+      const updatedAddresses = await updateUserAddresses(
+        user.id,
+        apiAddresses,
+        { type: 'setPrimary', addressId: id }
+      )
+
+      console.log('✅ Primary address updated successfully')
+
+      // Update Redux state
+      dispatch(
+        updateUserData({
+          ...user,
+          addresses: updatedAddresses
+        })
+      )
+
+      // Show success toast
+      toast.success('Primary address updated')
+    } catch (error) {
+      console.error('❌ Failed to update primary address:', error)
+      toast.error('Failed to update primary address. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const renderAddressItem = ({ item }: { item: any }) => {
@@ -143,7 +235,7 @@ export default function ManageAddressScreen () {
     const styles = createStyles(colors)
 
     return (
-      <View style={styles.addressCard}>
+      <View style={[styles.addressCard, loading && styles.disabledCard]}>
         <View style={styles.addressHeader}>
           <View style={styles.addressIconContainer}>
             <IconComponent size={20} color={colors.primary} />
@@ -170,7 +262,11 @@ export default function ManageAddressScreen () {
                 width: '50%'
               }}
             >
-              <Text style={styles.primaryLabel}>Set as Primary</Text>
+              <Text
+                style={[styles.primaryLabel, loading && styles.disabledText]}
+              >
+                Set as Primary
+              </Text>
             </View>
             <Switch
               value={item.isPrimary}
@@ -178,25 +274,43 @@ export default function ManageAddressScreen () {
               trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor={item.isPrimary ? colors.background : colors.surface}
               ios_backgroundColor={colors.border}
+              disabled={loading}
             />
           </View>
 
           <View style={styles.actionButtons}>
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[styles.actionButton, loading && styles.disabledButton]}
               onPress={() => handleEditAddress(item.id)}
+              disabled={loading}
+              activeOpacity={loading ? 1 : 0.7}
             >
-              <Edit3 size={18} color={colors.primary} />
+              <Edit3
+                size={18}
+                color={loading ? colors.textSecondary : colors.primary}
+              />
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[styles.actionButton, loading && styles.disabledButton]}
               onPress={() => handleDeleteAddress(item.id)}
+              disabled={loading}
+              activeOpacity={loading ? 1 : 0.7}
             >
-              <Trash2 size={18} color={colors.notification} />
+              <Trash2
+                size={18}
+                color={loading ? colors.textSecondary : colors.notification}
+              />
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Loading overlay */}
+        {loading && (
+          <View style={styles.loadingOverlay}>
+            <Text style={styles.loadingText}>Processing...</Text>
+          </View>
+        )}
       </View>
     )
   }
@@ -215,11 +329,19 @@ export default function ManageAddressScreen () {
         </View>
 
         <TouchableOpacity
-          style={styles.addButton}
+          style={[styles.addButton, loading && styles.disabledButton]}
           onPress={handleAddNewAddress}
+          disabled={loading}
+          activeOpacity={loading ? 1 : 0.7}
         >
-          <Plus size={16} color={colors.background} strokeWidth={2} />
-          <Text style={styles.addButtonText}>Add New</Text>
+          <Plus
+            size={16}
+            color={loading ? colors.textSecondary : colors.background}
+            strokeWidth={2}
+          />
+          <Text style={[styles.addButtonText, loading && styles.disabledText]}>
+            Add New
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -232,6 +354,7 @@ export default function ManageAddressScreen () {
           style={styles.addressList}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
+          scrollEnabled={!loading}
         />
       ) : (
         <View style={styles.emptyState}>
@@ -241,10 +364,16 @@ export default function ManageAddressScreen () {
             Add your first address to get started with deliveries
           </Text>
           <TouchableOpacity
-            style={styles.emptyButton}
+            style={[styles.emptyButton, loading && styles.disabledButton]}
             onPress={handleAddNewAddress}
+            disabled={loading}
+            activeOpacity={loading ? 1 : 0.7}
           >
-            <Text style={styles.emptyButtonText}>Add Address</Text>
+            <Text
+              style={[styles.emptyButtonText, loading && styles.disabledText]}
+            >
+              Add Address
+            </Text>
           </TouchableOpacity>
         </View>
       )}
@@ -311,7 +440,11 @@ const createStyles = (colors: any) =>
       shadowRadius: 4,
       elevation: 3,
       borderWidth: colors.background === '#000000' ? 1 : 0,
-      borderColor: colors.border
+      borderColor: colors.border,
+      position: 'relative'
+    },
+    disabledCard: {
+      opacity: 0.7
     },
     addressHeader: {
       flexDirection: 'row',
@@ -388,6 +521,29 @@ const createStyles = (colors: any) =>
       justifyContent: 'center',
       borderWidth: 1,
       borderColor: colors.border
+    },
+    disabledButton: {
+      backgroundColor: colors.border,
+      opacity: 0.6
+    },
+    disabledText: {
+      color: colors.textSecondary
+    },
+    loadingOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.1)',
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    loadingText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: '500'
     },
     emptyState: {
       flex: 1,

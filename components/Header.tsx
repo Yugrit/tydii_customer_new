@@ -1,5 +1,4 @@
 // components/CustomHeader.tsx
-import React from 'react'
 import {
   Image,
   StatusBar,
@@ -30,11 +29,7 @@ export default function CustomHeader ({
   const dispatch = useDispatch()
 
   const handleNotificationPress = () => {
-    if (onNotificationPress) {
-      onNotificationPress()
-    } else {
-      console.log('Notification pressed')
-    }
+    router.push('./(setting)/notification')
   }
 
   const handleProfilePress = () => {

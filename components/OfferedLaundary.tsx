@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/useToast'
 import ApiService from '@/services/ApiService'
 import { getData_MMKV } from '@/services/StorageService'
 import { jwtDecode } from 'jwt-decode'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Animated,
   Dimensions,
@@ -145,7 +145,7 @@ export default function OfferedLaundry () {
         throw new Error('User ID not available')
       }
 
-      console.log('Fetching favourite stores for user:', userId)
+      console.log('Fetching Offered Stores For:', userId)
 
       // API call matching your curl request
       const response = await ApiService.get({

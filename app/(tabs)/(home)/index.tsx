@@ -17,7 +17,7 @@ import { getData_MMKV, storeData_MMKV } from '@/services/StorageService'
 import { useRouter } from 'expo-router'
 import { jwtDecode } from 'jwt-decode'
 import { ArrowRight, X } from 'lucide-react-native'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   FlatList,
   Image,

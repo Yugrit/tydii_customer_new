@@ -59,6 +59,7 @@ const initialState: UserState = {
 }
 
 export function transformUserData (serverUser: any) {
+  console.log(serverUser)
   return {
     id: serverUser.id,
     email: serverUser.email || '',

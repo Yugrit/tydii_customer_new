@@ -9,7 +9,7 @@ export const storage = new MMKV({
 })
 
 // Method for storing data in MMKV
-export const storeData_MMKV = (key, value) => {
+export const storeData_MMKV = (key: string, value: string) => {
   console.log(key, 'asynData', value)
   try {
     storage.set(key, value)
@@ -20,7 +20,7 @@ export const storeData_MMKV = (key, value) => {
 
 // Method for getting data from MMKV
 
-export const getData_MMKV = key => {
+export const getData_MMKV = (key: string) => {
   try {
     const data = storage.getString(key)
     return data
@@ -32,7 +32,7 @@ export const getData_MMKV = key => {
 
 // Method for checking token expiry
 
-export const isTokenExpired = accessToken => {
+export const isTokenExpired = (accessToken: string) => {
   const decodedToken = jwtDecode(accessToken)
   const currentTime = Date.now() / 1000
   //@ts-ignore

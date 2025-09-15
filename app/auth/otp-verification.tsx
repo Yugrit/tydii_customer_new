@@ -3,7 +3,7 @@ import { AuthApiService } from '@/services/AuthApi'
 import { storeData_MMKV } from '@/services/StorageService'
 import { Ionicons } from '@expo/vector-icons'
 import { router, useLocalSearchParams } from 'expo-router'
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Alert,
   StyleSheet,
@@ -91,7 +91,7 @@ export default function OtpVerification () {
       console.log(response)
       console.log('OTP Verification Response:', response)
 
-      const { token } = response
+      const { token, refreshToken } = response
       console.log(response)
       const userApprovalStatus: any = 'approved' // Replace with actual status from response if available
 
@@ -100,18 +100,14 @@ export default function OtpVerification () {
         dispatch(
           userLoginState({
             token,
-            isApproved: true,
-            userData: {
-              id: response?.payload?.sub,
-              email: response?.payload?.email,
-              name: response?.payload?.name
-            }
+            isApproved: true
           })
         )
 
         // ✅ Save to MMKV
 
         storeData_MMKV('user-token', token)
+        storeData_MMKV('refresh-token', refreshToken)
         storeData_MMKV('sub', response?.payload?.sub)
 
         console.log('✅ User data saved to Redux and MMKV')

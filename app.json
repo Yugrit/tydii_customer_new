@@ -1,25 +1,58 @@
 {
   "expo": {
-    "name": "TydiiCustomer",
-    "slug": "TydiiCustomer",
+    "name": "Tydii",
+    "slug": "tydii",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/app-icon.png",
-    "scheme": "tydiicustomer",
+    "icon": "./assets/images/appicon.png",
+    "scheme": "tydii",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.tydii.customer"
+      "associatedDomains": ["applinks:tydii.io","applinks:dev.tydii.io"],
+      "bundleIdentifier": "com.tydii.customer",
+      "config": {
+        "googleMapsApiKey": "AIzaSyCLuu2pgsYBcu-iQ8i1i1vlaqz2nLVgsco"
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/app-icon.png",
+        "foregroundImage": "./assets/images/appicon.png",
         "backgroundColor": "#ffffff",
         "resizeMode": "contain"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.tydii.customer"
+      "package": "com.tydii.customer",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCLuu2pgsYBcu-iQ8i1i1vlaqz2nLVgsco"
+        }
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "https",
+              "host": "tydii.io",
+              "pathPrefix": "/"
+            },
+            {
+              "scheme": "https",
+              "host": "dev.tydii.io",
+              "pathPrefix": "/"
+            },
+            {
+              "scheme": "tydii"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -31,7 +64,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/app-icon.png",
+          "image": "./assets/images/appicon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"

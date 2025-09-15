@@ -9,7 +9,7 @@ export const storage = new MMKV({
 })
 
 // Method for storing data in MMKV
-export const storeData_MMKV = (key: string, value: string) => {
+export const storeData_MMKV = (key: any, value: string) => {
   console.log(key, 'asynData', value)
   try {
     storage.set(key, value)

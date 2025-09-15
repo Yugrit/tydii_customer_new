@@ -2,7 +2,6 @@
 import { RootState } from '@/Redux/Store'
 import { useThemeColors } from '@/hooks/useThemeColor'
 import { Stack } from 'expo-router'
-import React from 'react'
 import { StyleSheet, View } from 'react-native'
 import { useSelector } from 'react-redux'
 

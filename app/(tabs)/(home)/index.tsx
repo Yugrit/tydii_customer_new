@@ -246,7 +246,7 @@ export default function HomePage () {
           )
 
           // Save to MMKV for future app launches
-          storeData_MMKV('user-data', transformedUserData)
+          storeData_MMKV('user-data', JSON.stringify(transformedUserData))
 
           console.log('✅ User data fetched and saved')
         } catch (error) {

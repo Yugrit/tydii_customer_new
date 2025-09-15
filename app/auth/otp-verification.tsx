@@ -83,8 +83,14 @@ export default function OtpVerification () {
     try {
       // ✅ Call AuthApiService.verifyOtp
       const payload = email
-        ? { email: email as string, otp: enteredOtp }
-        : { mobileNumber: phone as string, otp: enteredOtp }
+        ? {
+            email: email as string,
+            otp: enteredOtp
+          }
+        : {
+            mobileNumber: phone as string,
+            otp: enteredOtp
+          }
 
       console.log('Verifying OTP with payload:', payload)
       const response = await AuthApiService.verifyOtp(payload)

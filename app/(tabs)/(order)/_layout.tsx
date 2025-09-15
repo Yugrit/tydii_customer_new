@@ -1,6 +1,5 @@
 // app/(tabs)/(home)/order/_layout.tsx
 import { Stack } from 'expo-router'
-import React from 'react'
 import { StyleSheet, View } from 'react-native'
 
 export default function OrderLayout () {

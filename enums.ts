@@ -21,3 +21,9 @@ export enum OrderStatus {
   DELIVERY_SCHEDULED = 'Delivery Scheduled',
   DELIVERED = 'Delivered'
 }
+
+export enum deviceType {
+  WEB = 'web',
+  IOS = 'ios',
+  ANDROID = 'android'
+}

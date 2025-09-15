@@ -1,10 +1,9 @@
 import ApiService from '@/services/ApiService'
 import { getData_MMKV, storeData_MMKV } from '@/services/StorageService'
-// import notifee, { AndroidImportance } from '@notifee/react-native'
 import messaging from '@react-native-firebase/messaging'
 import { router } from 'expo-router'
 import { jwtDecode } from 'jwt-decode'
-import { Platform } from 'react-native'
+import { Alert, PermissionsAndroid, Platform } from 'react-native'
 
 class FCMService {
   fcmToken: string | null = null
@@ -12,16 +11,31 @@ class FCMService {
   async initialize () {
     console.log('🔥 Initializing FCM Service...')
 
+    // iOS requires this before requesting permission
+    await messaging().registerDeviceForRemoteMessages()
+
     const hasPermission = await this.requestPermission()
 
     if (hasPermission) {
       await this.getFCMToken()
       this.setupMessageHandlers()
+    } else {
+      Alert.alert('Permission denied', 'Enable notifications in settings.')
     }
   }
 
   async requestPermission (): Promise<boolean> {
     try {
+      if (Platform.OS === 'android' && Platform.Version >= 33) {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+        )
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          console.log('❌ Android notification permission denied')
+          return false
+        }
+      }
+
       const authStatus = await messaging().requestPermission({
         alert: true,
         badge: true,
@@ -89,19 +103,19 @@ class FCMService {
   setupMessageHandlers () {
     console.log('📬 Setting up message handlers...')
 
-    // Foreground messages
+    // Foreground
     messaging().onMessage(async remoteMessage => {
       console.log('📨 Foreground message:', remoteMessage)
       this.showNotification(remoteMessage)
     })
 
-    // Background/quit -> foreground
+    // Background → Foreground
     messaging().onNotificationOpenedApp(remoteMessage => {
       console.log('📱 App opened from notification:', remoteMessage)
       this.handleNotificationTap(remoteMessage)
     })
 
-    // App opened from quit state
+    // Quit → Foreground
     messaging()
       .getInitialNotification()
       .then(remoteMessage => {
@@ -123,11 +137,12 @@ class FCMService {
   async showNotification (remoteMessage: any) {
     const { notification } = remoteMessage
     if (!notification) return
+    // You can integrate Notifee/Expo Notifications here if you want local display
   }
 
   handleNotificationTap (remoteMessage: any) {
     console.log('👆 Notification tapped:', remoteMessage)
-    router.push('./') // Navigate to your desired screen
+    router.push('/') // ✅ absolute path to home
   }
 
   getCurrentToken (): string | null {

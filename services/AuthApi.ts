@@ -1,4 +1,6 @@
 // services/AuthApiService.ts
+import { deviceType } from '@/enums'
+import { Platform } from 'react-native'
 import ApiService from './ApiService'
 
 export const AuthApiService = {
@@ -21,7 +23,9 @@ export const AuthApiService = {
   }) => {
     try {
       const response = await ApiService.post({
-        url: 'auth/verify-otp', // Update with your actual endpoint
+        url: `auth/verify-otp?devicetype=${
+          Platform.OS === 'ios' ? deviceType.IOS : deviceType.ANDROID
+        }`, // Update with your actual endpoint
         data
       })
       return Promise.resolve(response)

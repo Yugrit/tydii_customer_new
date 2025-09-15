@@ -1,12 +1,15 @@
 // app/auth/login.tsx
+import { deviceType } from '@/enums'
 import { AuthApiService } from '@/services/AuthApi'
 import { Ionicons } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
   ImageBackground,
+  Linking,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -200,11 +203,37 @@ export default function LoginScreen () {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.socialIcon}>
-              <Ionicons name='logo-apple' size={24} color='#000' />
+              <Ionicons
+                name='logo-apple'
+                size={24}
+                color='#000'
+                onPress={() => {
+                  Linking.openURL(
+                    `https://dev.tydii.io/api/auth/apple/init?userType=normal%20user&devicetype=${
+                      Platform.OS === 'ios'
+                        ? deviceType.IOS
+                        : deviceType.ANDROID
+                    }`
+                  )
+                }}
+              />
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.socialIcon}>
-              <Ionicons name='logo-google' size={24} color='#EA4335' />
+              <Ionicons
+                name='logo-google'
+                size={24}
+                color='#EA4335'
+                onPress={() => {
+                  Linking.openURL(
+                    `https://dev.tydii.io/api/auth/google/init?userType=normal%20user&devicetype=${
+                      Platform.OS === 'ios'
+                        ? deviceType.IOS
+                        : deviceType.ANDROID
+                    }`
+                  )
+                }}
+              />
             </TouchableOpacity>
 
             <TouchableOpacity
